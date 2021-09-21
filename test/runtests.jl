@@ -1,6 +1,6 @@
-#using GLOQ
+using GLOQ
 using Test
-include("../src/GLOQ.jl")
+#include("../src/GLOQ.jl")
 
 @testset "GLOQ.jl" begin
     GLOQ.hello_world()
