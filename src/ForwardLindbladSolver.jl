@@ -1,5 +1,3 @@
-using LinearAlgebra
-using DifferentialEquations
 """
  Exponential solver
 
