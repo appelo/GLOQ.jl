@@ -1,5 +1,9 @@
 module GLOQ
 
+using LinearAlgebra
+using DifferentialEquations
+
+
 export about
 # Write your package code here.
 include("about.jl")
