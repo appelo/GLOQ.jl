@@ -1,18 +1,15 @@
 """
-    Exponential solver
+    exponential_solver(rho_vec0,L,t_span::Array{Float64};initial_type = "density"):
 
-input:
-- L: the whole propagate operator
-- t_span: where the function will be evaluated,
-- rho0_vec: initial states
+# Argument:
+- L: the whole propagation operator
+- t_span: where the function will be evaluated stored in
+- rho0_vec: initial density/state
 - initial_type: decide we aer given an initial density matrix or a state vector
 
-output:
+# Output:
 - solutions at t_span
 """
-using LinearAlgebra
-using DifferentialEquations
-
 function exponential_solver(rho_vec0,L,t_span::Array{Float64};initial_type = "density")
     if(initial_type == "states")
         rho_vec0 = (rho_vec0*rho_vec0')[:]
@@ -26,7 +23,19 @@ function exponential_solver(rho_vec0,L,t_span::Array{Float64};initial_type = "de
     end
     return rho_vec
 end
+"""
+    exponential_solver(rho_vec0,L,t_span::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}};
+                       initial_type = "density")
 
+# Argument:
+- L: the whole propagation operator
+- t_span: where the function will be evaluated stored in
+- rho0_vec: initial density/state
+- initial_type: decide we aer given an initial density matrix or a state vector
+
+# Output:
+- solutions at t_span
+"""
 function exponential_solver(rho_vec0,L,
                             t_span::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}};
                             initial_type = "density")
@@ -52,13 +61,14 @@ end
 Function provide interfaces to DifferentialEquations
 package.
 
-Input:
+# Argument:
 - L: Lindblad operator
 - time: final time or time beining evaluated
 - rho0: initial condition
 - initial_type: specify initial value is a density matrix/a state vector
 
-Output: A problem object which we will feed to DifferentialEquations.jl
+# Output:
+A problem object which we will feed to DifferentialEquations.jl
 """
 function LindbladODEProblem(rho0,L::Array{ComplexF64,2},time_final::Float64;initial_type = "density")
     if(initial_type=="states")
