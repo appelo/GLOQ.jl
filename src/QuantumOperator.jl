@@ -1,16 +1,16 @@
 """
-  make_lindblad_operator(H,L_list,N::Int64=0)
+    make_lindblad_operator(H,L_list,N::Int64=0)
 
-  Argument:
-  - the Hamiltonain H and a list of Lindblad terms L_k's
-  - N is number of states
+#Argument:
+- the Hamiltonain H and a list of Lindblad terms L_k's
+- N is number of states
 
- Output:
+#Output:
 
- the operator for the vectorized system
+the operator for the vectorized system
 
-       -LH: corresponding to the Hamiltonian part
-       -LD: corresponding to the Dissipation part
+- LH: corresponding to the Hamiltonian part
+- LD: corresponding to the Dissipation part
 """
 function make_lindblad_operator(H,L_list,N::Int64=0)
     if(N==0)

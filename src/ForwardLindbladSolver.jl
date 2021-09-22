@@ -1,17 +1,18 @@
+"""
+    Exponential solver
+
+input:
+- L: the whole propagate operator
+- t_span: where the function will be evaluated,
+- rho0_vec: initial states
+- initial_type: decide we aer given an initial density matrix or a state vector
+
+output:
+- solutions at t_span
+"""
 using LinearAlgebra
 using DifferentialEquations
-"""
- Exponential solver
 
- input:
- -L: the whole propagate operator
- -t_span: where the function will be evaluated,
- -rho0_vec: initial states
- -initial_type: decide we aer given an initial density matrix or a state vector
-
- output:
- - solutions at t_span
-"""
 function exponential_solver(rho_vec0,L,t_span::Array{Float64};initial_type = "density")
     if(initial_type == "states")
         rho_vec0 = (rho_vec0*rho_vec0')[:]
@@ -46,19 +47,19 @@ function exponential_solver(rho_vec0,L,
 end
 
 """
- Differential equations solver:
- provide interfaces to DifferentialEquations
- package.
+    LindbladODEProblem(rho0,L::Array{ComplexF64,2},time_final::Float64;initial_type = "density")
 
- Input:
- -L: Lindblad operator
- -time: final time or time beining evaluated
- -rho0: initial condition
- -initial_type: specify initial value is a density matrix/a state vector
+Function provide interfaces to DifferentialEquations
+package.
 
- Output: A problem object which we will feed to DifferentialEquations.jl
+Input:
+- L: Lindblad operator
+- time: final time or time beining evaluated
+- rho0: initial condition
+- initial_type: specify initial value is a density matrix/a state vector
+
+Output: A problem object which we will feed to DifferentialEquations.jl
 """
-# constant Lindblad problem
 function LindbladODEProblem(rho0,L::Array{ComplexF64,2},time_final::Float64;initial_type = "density")
     if(initial_type=="states")
         rho0 = (rho0*rho0')[:];
@@ -66,7 +67,6 @@ function LindbladODEProblem(rho0,L::Array{ComplexF64,2},time_final::Float64;init
     rho0 = convert(Vector{ComplexF64},rho0)
     println(typeof(rho0))
     function ode_problem!(_drho,_rho,_p,_t)
-    	# .= is essential, = will not work
     	_drho .= _p*_rho
     end
     return ODEProblem(ode_problem!,rho0,(0.0,time_final),L)
