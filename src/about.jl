@@ -44,7 +44,7 @@ function about()
                       `-+oo+++++++++///+++++//+++++++++ooosssssyyyyyyssssssssssyyyyso`               ```
                        ``/oo+o+++++++++++++++++++++++++ooooooossssyyyyyysooosssyyyysy:.`              ``
                     ``.-+sooooo++++++++///+++ooo+++++++++++ooosssyyhhyssoooossyyyyyhmmhs:.`          ` `
-              ```.-/oyhdddhsooo+++++++///+++oooosssssssssssyyyyyhhhyysoo++oosyyyhhhmmmmmmhs:.``       ` 
+              ```.-/oyhdddhsooo+++++++///+++oooosssssssssssyyyyyhhhyysoo++oosyyyhhhmmmmmmhs:.``       `
        `  ``.:+syhdddddmmmmhsooo+++++++//++////+////++++++oooooossssoooo+oosyyyhhhhmNNNmmmmmds+-````  ``
     ```.:+syhddddddddmmmmmmmhssooo++++++/+///////++++ooooooosssssssoossooosyyyhhhhhhNNNNNNNmmmmdyo:.````
     +syddddddddddmmmmmmmmmmhysssoo+++++++++///////+++ooooosooooooooosssssssyhhhhhhhhdNNNNNNNNmmmmmmhs+-`
@@ -68,4 +68,3 @@ function about()
     mmmmmmmmmmmmmmmmmmmmmmmmmmhysssosssyssso++///////////+oossysyhdmmmNNmddhhyyyyhhhhhhhyyssdMNMNNNMNMMM")
     return nothing
 end
-
