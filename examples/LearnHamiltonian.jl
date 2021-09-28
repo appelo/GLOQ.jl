@@ -1,6 +1,6 @@
 using Random
 using Plots
-using DifferentialEquations,DiffEqFlux
+using DifferentialEquations,DiffEqFlux,LinearAlgebra
 using Optim
 using ForwardDiff
 include("../src/GLOQ.jl")
@@ -187,6 +187,7 @@ println(p3_DEFlux)
 println(p3_Optim)
 
 ##########################################
+#=
 function test_auto_diff(p)
       _HK = [0  0  p[2];
              0  0  0;
@@ -212,3 +213,4 @@ function test_auto_diff(p)
 end
 @time Zygote.gradient(test_auto_diff, p_true)
 println("auto-diff done")
+=#

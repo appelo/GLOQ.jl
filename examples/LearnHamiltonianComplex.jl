@@ -1,6 +1,6 @@
 using Random
 using Plots
-using DifferentialEquations,DiffEqFlux
+using DifferentialEquations,DiffEqFlux,LinearAlgebra
 using Optim
 include("../src/GLOQ.jl")
 pyplot()
