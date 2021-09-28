@@ -34,27 +34,13 @@ to time point i and state j
 function get_population(rho_u_history::Array{Float64,2})
 	N,nt = size(rho_u_history)
 	N = Int64(sqrt(N))
-	P = zeros(Float64,nt,N)
-	# compute the trace for R
-    for i = 1:nt
-        for j = 1:N
-            P[i,j] = P[i,j] + (rho_u_history[1+(j-1)*(N+1),i])
-        end
-    end
-    return P
+    return transpose(rho_u_history[1:N+1:end,:])
 end
 
-function get_population(rho_u_history::Array{Array{AbstractFloat}})
-	N,nt = size(rho_vec_history)
+function get_population(rho_u_history::Array{Array{Float64}})
+	N,nt = size(rho_u_history)
 	N = Int64(sqrt(N))
-	P = zeros(Float64,nt,N)
-	# compute the trace for R
-    for i = 1:nt
-        for j = 1:N
-            P[i,j] = P[i,j] + (rho_u_history[1+(j-1)*(N+1),i])
-        end
-    end
-    return P
+    return transpose(rho_u_history[1:N+1:end,:])
 end
 
 """
@@ -71,13 +57,8 @@ function get_population(rho_vec_history::Array{ComplexF64,2})
 	N,nt = size(rho_vec_history)
 	N = Int64(sqrt(N))
 	P = zeros(Float64,nt,N)
-	# compute the trace for R
-    for i = 1:nt
-        for j = 1:N
-            P[i,j] = P[i,j] + real(rho_vec_history[1+(j-1)*(N+1),i])
-        end
-    end
-    return P
+	# compute the trace
+    return transpose(real(rho_vec_history[1:N+1:end,:]))
 end
 
 function get_population(rho_vec_history::Array{Array{ComplexF64}})
@@ -85,12 +66,7 @@ function get_population(rho_vec_history::Array{Array{ComplexF64}})
 	N = Int64(sqrt(N))
 	P = zeros(Float64,nt,N)
 	# compute the trace for R
-    for i = 1:nt
-        for j = 1:N
-            P[i,j] = P[i,j] + real(rho_vec_history[1+(j-1)*(N+1),i])
-        end
-    end
-    return P
+	return transpose(real(rho_vec_history[1:N+1:end,:]))
 end
 """
 	convert_state_to_density(u::Array{Float64,1},v::Array{Float64,1})

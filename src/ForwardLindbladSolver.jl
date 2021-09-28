@@ -1,9 +1,12 @@
 """
     exponential_solver_complex(rho_vec0,L,t_span::Array{Float64};initial_type = "density"):
 # Purpose:
-- use an exponential integrator to integrate rho_t=-i(LK+iLS) rho+LD rho
+- use an exponential integrator to integrate
+
+    ``\\rho_t=-i(L_K+iL_S) \\rho+L_D \rho``
+
 # Argument:
-- u0,v0: rho0 = rho_u0 - i rho_v0
+- ``\\rho_{u0},\\rho_{v0}``: ``\\rho0 = ``\\rho_{u0} - i \\rho_{v0}``
 - LK: real part of the Hamiltonian operator
 - LS: imaginary part of the Hamiltonain operator
 - LD: Lindblad operator
@@ -101,7 +104,7 @@ end
     LindbladODEProblemComplex(rho0,L::Array{ComplexF64,2},time_final::Float64;initial_type = "density")
 
 Function provide interfaces to DifferentialEquations
-package to solve: rho_t = L rho
+package to solve: ``\\rho_t = L \\rho``
 
 # Argument:
 - L: Lindblad operator
@@ -128,10 +131,11 @@ end
 
 Function provide interfaces to DifferentialEquations
 package to solve the real-valued Lindblad system:
-    (rho_u - i rho_v)_t = -i (LK+iLs)(rho_u-i rho_v) + LD(rho_u-i rho_v)
+
+    ``(\\rho_u - i \\rho_v)_t = -i (L_K+iL_S)(\\rho_u-i \\rho_v) + L_D(\\rho_u-i \\rho_v)``
 
 # Argument:
-- rho_u0,rho_v0: initial condition rho0 = rho_u0 - i rho_v0
+- ``\\rho_{u0}, \\rho_{v0}``: initial condition ``\\rho_0 = \\rho_{u0} - i \\rho_{v0}``
 - LK: real part of the Hamiltonian operator
 - LS: imaginary part of the Hamiltonain operator
 - LD: Lindblad operator

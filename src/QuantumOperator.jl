@@ -2,7 +2,7 @@
     make_lindblad_operator(HK,HS,L_list,N::Int64=0)
 
 # Argument:
-- The real part and the imaginary part of the Hamiltonian: H = HK-i HS
+- The real part and the imaginary part of the Hamiltonian: ``H = H_K-i H_S``
 - A list of Lindblad terms L_k's
 - N is number of states
 
@@ -12,7 +12,7 @@ the operator for the vectorized system
 - LK: real matrix corresponding to the real part of the Hamiltonian operator
 - LS: real matrix corresponding to the imaginary part of the Hamiltonian operator
 - LD: real matrix corresponding to the Lindblad operator
-- Final system: rho_t = -i(LK+i LS)rho+LD rho
+- Final system: ``\\rho_t = -i(L_K+i L_S)\\rho+L_D \\rho``
 """
 function make_lindblad_operator(HK::Array{Float64,2},HS::Array{Float64,2},L_list,N::Int64=0)
     if(N==0)
