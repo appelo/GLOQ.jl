@@ -131,8 +131,7 @@ end
 
 Function provide interfaces to DifferentialEquations
 package to solve the real-valued Lindblad system:
-
-    ``(\\rho_u - i \\rho_v)_t = -i (L_K+iL_S)(\\rho_u-i \\rho_v) + L_D(\\rho_u-i \\rho_v)``
+``(\\rho_u - i \\rho_v)_t = -i (L_K+iL_S)(\\rho_u-i \\rho_v) + L_D(\\rho_u-i \\rho_v)``
 
 # Argument:
 - ``\\rho_{u0}, \\rho_{v0}``: initial condition ``\\rho_0 = \\rho_{u0} - i \\rho_{v0}``
