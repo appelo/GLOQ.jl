@@ -35,11 +35,14 @@ function exponential_solver(rho_u0,rho_v0,
         println("Error! initial_type must be \"density\" or \"states\"")
         return
     end
-    rho_vec = zeros(Float64,length(rho_vec0),length(t_span))
+    #rho_vec = zeros(Float64,length(rho_vec0),length(t_span))
     LL = [LS+LD -LK;
           LK     LS+LD]
-    for time_step = 1:length(t_span)
-        rho_vec[:,time_step] = exp(LL*t_span[time_step])*rho_vec0
+    # Zygote does not support functions with setindex!(), so code is organized in this way in order to
+    # use auto differentiation
+    rho_vec = exp(LL*t_span[1])*rho_vec0
+    for time_step = 2:length(t_span)
+        rho_vec = [rho_vec exp(LL*t_span[time_step])*rho_vec0]
     end
     return rho_vec[1:N,:],rho_vec[N+1:2*N,:]
 end
