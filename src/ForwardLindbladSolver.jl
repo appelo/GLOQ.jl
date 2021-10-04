@@ -46,6 +46,7 @@ function exponential_solver(rho_u0,rho_v0,
     end
     return rho_vec[1:N,:],rho_vec[N+1:2*N,:]
 end
+
 """
     exponential_solver_complex(rho_vec0,L,t_span::Array{Float64};initial_type = "density"):
 

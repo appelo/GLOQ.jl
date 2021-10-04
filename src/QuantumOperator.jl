@@ -61,3 +61,39 @@ function make_lindblad_operator_complex(H,L_list,N::Int64=0)
     end
     return LH,LD
 end
+
+"""
+    make_Hamiltonian_operator(HK,HS,N::Int64=0)
+
+# Argument:
+- The real part and the imaginary part of the Hamiltonian: ``H = H_K-i H_S``
+- N is number of states
+
+# Output:
+the operator for the vectorized system
+
+- LK: real matrix corresponding to the real part of the Hamiltonian operator
+- LS: real matrix corresponding to the imaginary part of the Hamiltonian operator
+"""
+function make_hamiltonian_operator(HK::Array{Float64,2},HS::Array{Float64,2},N::Int64=0)
+    if(N==0)
+        N = size(HK)[1]
+    end
+    # define an identity operator
+    It = Array{Float64, 2}(I, N, N)
+    # Hamiltonian part
+    LK = (kron(It,HK) - kron(transpose(HK),It))
+    LS = (kron(It,HS) - kron(transpose(HS),It))
+    return LK,LS,LD
+end
+
+function make_hamiltonian_operator(HK::Array{Float64,2},N::Int64=0)
+    if(N==0)
+        N = size(HK)[1]
+    end
+    # define an identity operator
+    It = Array{Float64, 2}(I, N, N)
+    # Hamiltonian part
+    LK = (kron(It,HK) - kron(transpose(HK),It))
+    return LK
+end
