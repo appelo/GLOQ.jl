@@ -84,7 +84,7 @@ end
 - N_states: number of states
 
 # Output:
--
+- rho_ramsey_u,rho_ramsey_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
 """
 function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   		  omega::Array{Float64},omega_drive::Float64,
