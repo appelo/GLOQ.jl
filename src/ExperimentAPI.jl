@@ -3,7 +3,7 @@
 
 # Argument:
 - omega: transition frequencies
-- omega\_drive: driving frequency
+- omega_drive: driving frequency
 - N: number of states
 
 # Output:
@@ -28,8 +28,8 @@ end
 - gamma2: determine the dephasing operator in the Lindblad system
 
 # Output:
-- L\_decay: L\_decay[i][i+1] = sqrt(gamma1[i]), and zeros everywhere else
-- L\_dephase: Diagonal{0,sqrt(gamma2[1]),...)
+- L_decay: L_decay[i][i+1] = sqrt(gamma1[i]), and zeros everywhere else
+- L_dephase: Diagonal{0,sqrt(gamma2[1]),...)
 """
 function RotationFrameLindblad(gamma1::Array{Float64},gamma2::Array{Float64})
 	#L_decay = Bidiagonal(zeros(length(gamma1)+1),sqrt.(gamma1),:U)
@@ -47,8 +47,8 @@ end
     RotationFrameRamseyControl(abs_control::Float64,phase_control::Float64,N::Int64)
 
 # Argument:
-- abs\_control: strength of the control ``\\Omega``
-- phase\_control: phase of the control signal ``\\theta``
+- abs_control: strength of the control ``\\Omega``
+- phase_control: phase of the control signal ``\\theta``
 - N: number of states
 
 # Output:
@@ -75,16 +75,16 @@ end
 					   N_states::Int64=0)
 
 # Argument:
-- rho\_u0,rho\_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
+- rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
 - gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
 - TC: control time of the control signal
-- t\_dark\_times: the dark time in the Ramsey experiment
-- N\_states: number of states
+- t_dark_times: the dark time in the Ramsey experiment
+- N_states: number of states
 
 # Output:
-- rho\_ramsey\_u,rho\_ramsey\_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- rho_ramsey_u,rho_ramsey_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
 """
 function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   		  omega::Array{Float64},omega_drive::Float64,

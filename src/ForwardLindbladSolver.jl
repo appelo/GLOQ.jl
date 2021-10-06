@@ -10,10 +10,10 @@
 - LK: real part of the Hamiltonian operator
 - LS: imaginary part of the Hamiltonain operator
 - LD: Lindblad operator
-- t\_span: where the solution will be stored
+- t_span: where the solution will be stored
 - initial_type: "density" vectorized density matrix, "states" states vector
 # Output:
-- rho\_u,rho\_v: solutions at t\_span given by ``\\rho(t_i) = \rho_u(:,i)-i \rho_v(:,i)``
+- rho_u,rho_v: solutions at t_span given by ``\\rho(t_i) = \rho_u(:,i)-i \rho_v(:,i)``
 """
 function exponential_solver(rho_u0,rho_v0,
                             LK,LS,LD,
@@ -52,12 +52,12 @@ end
 
 # Argument:
 - L: the whole propagation operator
-- t\_span: where the function will be evaluated stored in
-- rho0\_vec: initial density/state
-- initial\_type: decide we aer given an initial density matrix or a state vector
+- t_span: where the function will be evaluated stored in
+- rho0_vec: initial density/state
+- initial_type: decide we aer given an initial density matrix or a state vector
 
 # Output:
-- solutions at t\_span
+- solutions at t_span
 """
 function exponential_solver_complex(rho_vec0,L,t_span::Array{Float64};initial_type = "density")
     if(initial_type == "states")
@@ -78,12 +78,12 @@ end
 
 # Argument:
 - L: the whole propagation operator
-- t\_span: where the function will be evaluated stored in
-- rho0\_vec: initial density/state
-- initial\_type: decide we aer given an initial density matrix or a state vector
+- t_span: where the function will be evaluated stored in
+- rho0_vec: initial density/state
+- initial_type: decide we aer given an initial density matrix or a state vector
 
 # Output:
-- Complex-valued solutions at t\_span
+- Complex-valued solutions at t_span
 """
 function exponential_solver_complex(rho_vec0,L,
                             t_span::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}};
@@ -114,7 +114,7 @@ package to solve: ``\\rho_t = L \\rho``
 - L: Lindblad operator
 - time: final time or time beining evaluated
 - rho0: initial condition
-- initial\_type: specify initial value is a density matrix/a state vector
+- initial_type: specify initial value is a density matrix/a state vector
 
 # Output:
 A complex-valued problem object which we will feed to DifferentialEquations.jl
@@ -143,7 +143,7 @@ package to solve the real-valued Lindblad system:
 - LS: imaginary part of the Hamiltonain operator
 - LD: Lindblad operator
 - time: final time or time beining evaluated
-- initial\_type: specify initial value is a density matrix/a state vector
+- initial_type: specify initial value is a density matrix/a state vector
 
 # Output:
 A problem object which we will feed to DifferentialEquations.jl
