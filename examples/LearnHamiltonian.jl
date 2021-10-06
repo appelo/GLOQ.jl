@@ -69,6 +69,7 @@ plot!(fig,t_span,noisy_data4,lab=:false)
 plot!(fig,t_span,noisy_data5,lab=:false)
 display(fig)
 
+p_true = [1.0 1.0 0.25 0.5 0.5]
 ############################################################
 # Step 2: Learn the operators
 ############################################################
@@ -84,6 +85,8 @@ rho4_initial = [rho4_initial_real;rho4_initial_adj_imag]
 rho5_initial = [rho5_initial_real;rho5_initial_adj_imag]
 # p[1]-p[5] upper diagonal of the Hamiltonian part
 # p[6]-p[9] parameters in the Lindblad term
+
+
 function loss(p)
       _HK = [0  0  p[2];
              0  0  0;
@@ -126,7 +129,7 @@ end
 p_initial = [1.0;1.0;0.5;0.5;0.5]
 loss_initial = loss(p_initial)
 println("Initial loss: ",loss_initial)
-p_true = [1.0 1.0 0.25 0.5 0.5]
+
 
 @time p_DEFlux = DiffEqFlux.sciml_train(loss, p_initial)
 @time p_Optim = Optim.optimize(loss, p_initial)
@@ -186,31 +189,48 @@ println("Optim p: ",p3_Optim.minimizer)
 println(p3_DEFlux)
 println(p3_Optim)
 
-##########################################
-#=
-function test_auto_diff(p)
-      _HK = [0  0  p[2];
-             0  0  0;
-             p[2] 0  0]
+################################
+function loss_exp(p)
+      _HK = [0    0    p[2];
+             0    p[3] p[4];
+             p[2] p[4] p[5]]
       _HS = [0  p[1]  0;
             -p[1]  0  0;
              0  0  0]
-      _L1 = [0.0 p[3] 0.0;
-            0.0 0.0  p[4];
+      _L1 = [0.0 p[6] 0.0;
+            0.0 0.0  p[7];
             0.0 0.0  0.0]
       _L2 = [0.0 0.0 0.0;
-            0.0 p[5] 0.0;
-            0.0 0.0 2.0*p[5]]
+            0.0 p[8] 0.0;
+            0.0 0.0 2.0*p[8]]
       _L_list = (_L1,_L2)
       _LK,_LS,_LD = GLOQ.make_lindblad_operator(_HK,_HS,_L_list)
-      _problem = GLOQ.LindbladODEProblem(rho1_initial_real,rho1_initial_adj_imag,
-                                        _LK,_LS,_LD,
-                                         t_span[end];initial_type="density")
-      rho1_data = solve(_problem)
-#      return norm(Array(rho1_data[:,end]),2)^2 # AD works
-      pop_data1 = transpose(rho1_data[1:4:end,:])
-      return norm(pop_data1[:,end],2)
+
+      rho1_history_u,rho1_history_v = GLOQ.exponential_solver(real(u1),-imag(u1),_LK,_LS,_LD,t_span;initial_type = "states")
+      rho2_history_u,rho2_history_v = GLOQ.exponential_solver(real(u2),-imag(u2),_LK,_LS,_LD,t_span;initial_type = "states")
+      rho3_history_u,rho3_history_v = GLOQ.exponential_solver(real(u3),-imag(u3),_LK,_LS,_LD,t_span;initial_type = "states")
+      rho4_history_u,rho4_history_v = GLOQ.exponential_solver(real(u4),-imag(u4),_LK,_LS,_LD,t_span;initial_type = "states")
+      rho5_history_u,rho5_history_v = GLOQ.exponential_solver(real(u5),-imag(u5),_LK,_LS,_LD,t_span;initial_type = "states")
+
+      pop_data1 = GLOQ.get_population(rho1_history_u)
+      pop_data2 = GLOQ.get_population(rho2_history_u)
+      pop_data3 = GLOQ.get_population(rho3_history_u)
+      pop_data4 = GLOQ.get_population(rho4_history_u)
+      pop_data5 = GLOQ.get_population(rho5_history_u)
+
+      _loss = sum(abs2, pop_data1-noisy_data1)
+      _loss += sum(abs2, pop_data2-noisy_data2)
+      _loss += sum(abs2, pop_data3-noisy_data3)
+      _loss += sum(abs2, pop_data4-noisy_data4)
+      _loss += sum(abs2, pop_data5-noisy_data5)
+      return _loss
 end
-@time Zygote.gradient(test_auto_diff, p_true)
-println("auto-diff done")
-=#
+
+p_exp_initial = [1.0;1.0;0.25;0.1;0.1;0.5;0.5;0.5]
+@time p_exp_DEFlux = DiffEqFlux.sciml_train(loss_exp, p_exp_initial)
+@time p_exp_Optim = Optim.optimize(loss_exp, p_exp_initial)
+println("True p: ",p_true)
+println("DEFlux p: ",p_exp_DEFlux.u)
+println("Optim p: ",p_exp_Optim.minimizer)
+println(p_exp_DEFlux)
+println(p_exp_Optim)

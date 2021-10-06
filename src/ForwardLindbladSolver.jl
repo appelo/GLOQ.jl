@@ -13,7 +13,7 @@
 - t_span: where the solution will be stored
 - initial_type: "density" vectorized density matrix, "states" states vector
 # Output:
-- rho_u,rho_v: solutions at t_span given by rho(t_i) = rho_u(:,i)-i rho_v(:,i)
+- rho_u,rho_v: solutions at t_span given by ``\\rho(t_i) = \rho_u(:,i)-i \rho_v(:,i)``
 """
 function exponential_solver(rho_u0,rho_v0,
                             LK,LS,LD,
@@ -35,14 +35,18 @@ function exponential_solver(rho_u0,rho_v0,
         println("Error! initial_type must be \"density\" or \"states\"")
         return
     end
-    rho_vec = zeros(Float64,length(rho_vec0),length(t_span))
+    #rho_vec = zeros(Float64,length(rho_vec0),length(t_span))
     LL = [LS+LD -LK;
           LK     LS+LD]
-    for time_step = 1:length(t_span)
-        rho_vec[:,time_step] = exp(LL*t_span[time_step])*rho_vec0
+    # Zygote does not support functions with setindex!(), so code is organized in this way in order to
+    # use auto differentiation
+    rho_vec = exp(LL*t_span[1])*rho_vec0
+    for time_step = 2:length(t_span)
+        rho_vec = [rho_vec exp(LL*t_span[time_step])*rho_vec0]
     end
     return rho_vec[1:N,:],rho_vec[N+1:2*N,:]
 end
+
 """
     exponential_solver_complex(rho_vec0,L,t_span::Array{Float64};initial_type = "density"):
 
@@ -79,7 +83,7 @@ end
 - initial_type: decide we aer given an initial density matrix or a state vector
 
 # Output:
-- solutions at t_span
+- Complex-valued solutions at t_span
 """
 function exponential_solver_complex(rho_vec0,L,
                             t_span::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}};
@@ -113,7 +117,7 @@ package to solve: ``\\rho_t = L \\rho``
 - initial_type: specify initial value is a density matrix/a state vector
 
 # Output:
-A problem object which we will feed to DifferentialEquations.jl
+A complex-valued problem object which we will feed to DifferentialEquations.jl
 """
 function LindbladODEProblemComplex(rho0,L::Array{ComplexF64,2},time_final::Float64;initial_type = "density")
     if(initial_type=="states")

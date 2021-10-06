@@ -2,7 +2,7 @@ module GLOQ
 
 using LinearAlgebra
 using DifferentialEquations
-
+#using Zygote
 
 export about
 # Write your package code here.
@@ -13,6 +13,8 @@ include("QuantumOperator.jl")
 include("utility.jl")
 # Lindblad solver
 include("ForwardLindbladSolver.jl")
+# Provide interface to do characterization with Ramsey, Echo, T1 experiment
+include("ExperimentAPI.jl")
 export hello_world
 
 end
