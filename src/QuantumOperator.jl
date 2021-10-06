@@ -3,7 +3,7 @@
 
 # Argument:
 - The real part and the imaginary part of the Hamiltonian: ``H = H_K-i H_S``
-- A list of Lindblad terms L_k's
+- A list of Lindblad terms ``L_k``'s
 - N is number of states
 
 # Output:
@@ -36,7 +36,7 @@ end
     make_lindblad_operator(H,L_list,N::Int64=0)
 
 # Argument:
-- the Hamiltonain H and a list of Lindblad terms L_k's
+- the Hamiltonain H and a list of Lindblad terms ``L_k``'s
 - N is number of states
 
 # Output:
