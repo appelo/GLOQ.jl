@@ -84,7 +84,7 @@ function make_hamiltonian_operator(HK::Array{Float64,2},HS::Array{Float64,2},N::
     # Hamiltonian part
     LK = (kron(It,HK) - kron(transpose(HK),It))
     LS = (kron(It,HS) - kron(transpose(HS),It))
-    return LK,LS,LD
+    return LK,LS
 end
 
 function make_hamiltonian_operator(HK::Array{Float64,2},N::Int64=0)
