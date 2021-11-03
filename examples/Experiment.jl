@@ -41,13 +41,13 @@ for i = 1:N_Ramsey
 end
 
 # Ramsey Forward Solve
-rho_ramsey_u_exp,rho_ramsey_v_exp = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+@time rho_ramsey_u_exp,rho_ramsey_v_exp = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
 			     omegas,omr_ramsey,
 				 gamma1,gamma2,
 				 fromState,
 				 TC,t_ramsey,N_states;
 				 initial_type="states")
-rho_ramsey_u,rho_ramsey_v = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+@time rho_ramsey_u,rho_ramsey_v = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
 			     omegas,omr_ramsey,
 				 gamma1,gamma2,
 				 fromState,
@@ -63,34 +63,40 @@ fig2=plot(t_ramsey./1000.0,population_Ramsey-population_Ramsey_exp)
 display(fig2)
 
 
-#=
+
 # Echo Forward Solve
 T_Echo = 10.0*1000#10.0 * 1000
-N_Echo = 1001
+N_Echo = 11
 t_echo = zeros(Float64,N_Echo)
 dt_echo = T_Echo/(N_Echo-1)
 for i = 1:N_Echo
 	dark_time = (i-1)*dt_echo
 	t_echo[i] = dark_time
 end
-rho_echo_u_exp,rho_echo_v_exp = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
+@time rho_echo_u_exp,rho_echo_v_exp = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 			     omegas,omr_echo,
 				 gamma1,gamma2,
 				 fromState,
 				 TC,t_echo,N_states;
 				 initial_type = "states")
-rho_echo_u,rho_echo_v = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
+@time rho_echo_u,rho_echo_v = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 			     omegas,omr_echo,
 				 gamma1,gamma2,
 				 fromState,
 				 TC,t_echo,N_states;
 				 initial_type = "states",
-				 method = STrapezoid())
+				 method = STrapezoid(),
+				 dt_control = 0.01)
 population_Echo = GLOQ.get_population(rho_echo_u)
+population_Echo_exp = GLOQ.get_population(rho_echo_u_exp)
 
-fig2=plot(t_echo./1000.0,population_Echo)
-display(fig2)
+fig_echo=plot(t_echo./1000.0,population_Echo)
+plot!(fig_echo,t_echo./1000.0,population_Echo_exp,line=(:dash))
+display(fig_echo)
 
+fig_echo2=plot(t_echo./1000.0,population_Echo-population_Echo_exp)
+display(fig_echo2)
+#=
 # T1 Forward Solve
 T_T1 = 10.0*1000
 N_T1 = 1001

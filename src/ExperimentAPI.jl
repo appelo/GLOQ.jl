@@ -58,7 +58,8 @@ end
 function RotationFrameRamseyControl(abs_control::Float64,phase_control::Float64,N::Int64)
     p = abs_control*cos(phase_control);
     q = abs_control*sin(phase_control);
-	amat = [Diagonal(sqrt.(collect(1:N-1)));zeros(Float64,1,N-1)]
+	amat = [Matrix(Diagonal(sqrt.(collect(1:N-1))));zeros(Float64,1,N-1)]
+	#amat = [Diagonal(sqrt.(collect(1:N-1)));zeros(Float64,1,N-1)]
 	amat = [zeros(Float64,N) amat]
     #amat = Bidiagonal(zeros(N),sqrt.(collect(1:N-1)),:U) # trouble maker, maybe we can make a Bidiagonal adjoint
     HCK = p*(amat+transpose(amat))
@@ -78,7 +79,7 @@ end
   ``(a+a^\\dagger)``
 """
 function RotationFrameRamseyControl(N::Int64)
-	amat = [Diagonal(sqrt.(collect(1:N-1)));zeros(Float64,1,N-1)]
+	amat = [Matrix(Diagonal(sqrt.(collect(1:N-1))));zeros(Float64,1,N-1)]
 	amat = [zeros(Float64,N) amat]
     HCK = amat+transpose(amat)
 	HCS = zeros(Float64,N,N)
@@ -113,7 +114,9 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   		  TC::Float64,t_dark_times::Array{Float64},
 				   		  N_states::Int64=0;
 						  initial_type="states",
-						  method="exponential")
+						  method="exponential",
+						  DiffEqSensealg="nothing",
+						  dt_control=0.05)
     if(N_states==0)
 		N_states = length(omega)+1
 	end
@@ -182,33 +185,42 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 		GaussianAmplitude = 0.5*pi/(width*sqrt(InitialState+1.0))
 		function ControlledODE!(_drho,_rho,_p,_t)
 			# Half pi pulse
-			#SystemOperator  = [LD+LS_half_pi -LK_half_pi;
-			#				   LK_half_pi     LD+LS_half_pi]
-			_LK_half_pi,_LS_half_pi,_LD = make_lindblad_operator(Matrix(HK_control*GaussianPulse(_t,GaussianAmplitude,width)+HK_free),
-															     Matrix(HS_control*GaussianPulse(_t,GaussianAmplitude,width)),
+			_LK_half_pi,_LS_half_pi,_LD = make_lindblad_operator(HK_control*GaussianPulse(_t,GaussianAmplitude,width)+HK_free,
+															     HS_control*GaussianPulse(_t,GaussianAmplitude,width),
 															     (L1,L2))
 			SystemOperator  = [_LD+_LS_half_pi -_LK_half_pi;
 					  		   _LK_half_pi      _LD+_LS_half_pi]
 			_drho .= SystemOperator*_rho
 		end
 		# DiffEq interface for the controlled problem
-		controlled_problem = ODEProblem(ControlledODE!,rho_vec0,(0.0,0.5*TC),[])
+		controlled_problem = ODEProblem(ControlledODE!,rho_vec0,(0.0,0.5*TC),[1.0])
 		# Free propagation part
 		FreeEvolution = [ LD -LK_free;
 						  LK_free  LD]
 		# half-pi pusle
 		if(method=="DiffEqDefault")
-			sol = solve(controlled_problem,saveat=0.05)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(controlled_problem,saveat=dt_control)
+			else
+				sol = solve(controlled_problem,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		else
-			sol = solve(controlled_problem,method,saveat=0.05)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(controlled_problem,method,saveat=dt_control)
+			else
+				sol = solve(controlled_problem,method,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		end
 		rho_vec1 = sol[:,end]
+		# free propagation for a dark time
+		Free_operator = exp(t_dark_times[1]*FreeEvolution)
+		rho_vec2 = Free_operator*rho_vec1
 		# second half-pi pulse
-		controlled_problem = remake(controlled_problem,u0=rho_vec1)
+		controlled_problem = remake(controlled_problem,u0=rho_vec2)
 		if(method=="DiffEqDefault")
-			sol = solve(controlled_problem,saveat=0.05)
+			sol = solve(controlled_problem,saveat=dt_control)
 		else
-			sol = solve(controlled_problem,method,saveat=0.05)
+			sol = solve(controlled_problem,method,saveat=dt_control)
 		end
 		rho_ramsey = sol[:,end]
 		# free propagation for a dark time + second half-pi pulse
@@ -220,9 +232,17 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 			# second half pi pulse
 			controlled_problem = remake(controlled_problem,u0=rho_vec2)
 			if(method=="DiffEqDefault")
-				sol = solve(controlled_problem,saveat=0.05)
+				if(DiffEqSensealg=="nothing")
+					sol = solve(controlled_problem,saveat=dt_control)
+				else
+					sol = solve(controlled_problem,saveat=dt_control,sensealg=DiffEqSensealg)
+				end
 			else
-				sol = solve(controlled_problem,method,saveat=0.05)
+				if(DiffEqSensealg=="nothing")
+					sol = solve(controlled_problem,method,saveat=dt_control)
+				else
+					sol = solve(controlled_problem,method,saveat=dt_control,sensealg=DiffEqSensealg)
+				end
 			end
 			rho_ramsey = [ rho_ramsey sol[:,end] ]
 		end
@@ -356,7 +376,9 @@ function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   TC::Float64,t_dark_times::Array{Float64},
 				   N_states::Int64=0;
 				   initial_type="states",
-				   method="exponential")
+				   method="exponential",
+				   DiffEqSensealg="nothing",
+				   dt_control=0.05)
 
 	if(N_states==0)
 		N_states = length(omega)+1
@@ -367,9 +389,13 @@ function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 	# Hamiltonian without control
 	HK_free = RotationFrameDiagonal(omega,omega_drive)
 	# Hamiltonain with control
-	Ω = 0.5*pi/(TC*sqrt(InitialState+1.0))
-	θ = 0.0
-	HK_control,HS_control = RotationFrameRamseyControl(Ω,θ,N_states)
+	if(method=="exponential")
+		Ω = 0.5*pi/(TC*sqrt(InitialState+1.0))
+		θ = 0.0
+		HK_control,HS_control = RotationFrameRamseyControl(Ω,θ,N_states)
+	else
+		HK_control,HS_control = RotationFrameRamseyControl(N_states)
+	end
 	# Lindblad operator
 	L1,L2 = RotationFrameLindblad(gamma1,gamma2)
 	# Assemble the operators for the vectorized system
@@ -397,7 +423,7 @@ function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 		Half_pi_operator = exp(0.5*TC*[LD+LS_half_pi -LK_half_pi; LK_half_pi LD+LS_half_pi])
 		Pi_operator = Half_pi_operator*Half_pi_operator
 		FreeEvolution = [ LD -LK_free;
-					  LK_free  LD]
+					      LK_free  LD]
 					  # half-pi pusle
 		rho_vec1 = Half_pi_operator*rho_vec0
 		# free propagation for a dark time
@@ -426,45 +452,73 @@ function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 			σ = _width/sqrt(2.0*pi)
 			return _amplitude*exp(-(_time-0.5*_tot_time)^2/(2.0*σ*σ))
 		end
-		GaussianAmplitude = 2.5*pi/(TC*sqrt(InitialState+1.0))
 		width = TC/2.5
+		GaussianAmplitude = 0.5*pi/(width*sqrt(InitialState+1.0))
 		function ControlledODE!(_drho,_rho,_p,_t)
-			SystemOperator  = [LD+LS_half_pi*GaussianPulse(_t,GaussianAmplitude,width) -LK_half_pi*GaussianPulse(_t,GaussianAmplitude,width);
-							   LK_half_pi*GaussianPulse(_t,GaussianAmplitude,width)     LD+LS_half_pi*GaussianPulse(_t,GaussianAmplitude,width)]
-			_drho = SystemOperator*_rho
+			# Half pi pulse
+			_LK_half_pi,_LS_half_pi,_LD = make_lindblad_operator(HK_control*GaussianPulse(_t,GaussianAmplitude,width)+HK_free,
+															     HS_control*GaussianPulse(_t,GaussianAmplitude,width),
+															     (L1,L2))
+			SystemOperator  = [_LD+_LS_half_pi -_LK_half_pi;
+					  		   _LK_half_pi      _LD+_LS_half_pi]
+			_drho .= SystemOperator*_rho
 		end
 		# DiffEq interface for the controlled problem
-		half_pi_pulse = ODEProblem(ControlledODE!,rho_vec0,(0.0,0.5*TC),[])
+		half_pi_pulse = ODEProblem(ControlledODE!,rho_vec0,(0.0,0.5*TC),[1.0])
 		# Free propagation part
 		FreeEvolution = [ LD -LK_free;
 						  LK_free  LD]
 		# half-pi pusle
 		if(method=="DiffEqDefault")
-			sol = solve(half_pi_pulse)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(half_pi_pulse,saveat=dt_control)
+			else
+				sol = solve(half_pi_pulse,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		else
-			sol = solve(half_pi_pulse,method)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(half_pi_pulse,method,saveat=dt_control)
+			else
+				sol = solve(half_pi_pulse,method,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		end
 		rho_vec1 = sol[:,end]
 		# free propagation for a dark time
 		Free_operator = exp(t_dark_times[1]*FreeEvolution)
 		rho_vec2 = Free_operator*rho_vec1
 		# pi pulse
-		pi_pulse = ODEProblem(ControlledODE!,rho_vec2,(0.0,TC),[])
+		pi_pulse = ODEProblem(ControlledODE!,rho_vec2,(0.0,TC),[1.0])
 		if(method=="DiffEqDefault")
-			sol = solve(pi_pulse)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(pi_pulse,saveat=dt_control)
+			else
+				sol = solve(pi_pulse,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		else
-			sol = solve(pi_pulse,method)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(pi_pulse,method,saveat=dt_control)
+			else
+				sol = solve(pi_pulse,method,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		end
 		# free propagation for the same dark time
-		rho_vec2 = Free_operator*sol.u[:,end]
+		rho_vec2 = Free_operator*sol[:,end]
 		# half pi pulse
 		half_pi_pulse = remake(half_pi_pulse,u0=rho_vec2)
 		if(method=="DiffEqDefault")
-			sol = solve(half_pi_pulse)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(half_pi_pulse,saveat=dt_control)
+			else
+				sol = solve(half_pi_pulse,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		else
-			sol = solve(half_pi_pulse,method)
+			if(DiffEqSensealg=="nothing")
+				sol = solve(half_pi_pulse,method,saveat=dt_control)
+			else
+				sol = solve(half_pi_pulse,method,saveat=dt_control,sensealg=DiffEqSensealg)
+			end
 		end
-		rho_echo = sol.u[:,end]
+		rho_echo = sol[:,end]
 		# free propagation for a dark time + second half-pi pulse
 		n_dark_times = length(t_dark_times)
 		for i = 2:n_dark_times
@@ -474,20 +528,36 @@ function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 			# pi pulse
 			pi_pulse = remake(pi_pulse,u0=rho_vec2)
 			if(method=="DiffEqDefault")
-				sol = solve(pi_pulse)
+				if(DiffEqSensealg=="nothing")
+					sol = solve(pi_pulse,saveat=dt_control)
+				else
+					sol = solve(pi_pulse,saveat=dt_control,sensealg=DiffEqSensealg)
+				end
 			else
-				sol = solve(pi_pulse,method)
+				if(DiffEqSensealg=="nothing")
+					sol = solve(pi_pulse,method,saveat=dt_control)
+				else
+					sol = solve(pi_pulse,method,saveat=dt_control,sensealg=DiffEqSensealg)
+				end
 			end
 			# free propagation for the same dark time
-			rho_vec2 = Free_operator*sol.u[:,end]
+			rho_vec2 = Free_operator*sol[:,end]
 			# half pi pulse
 			half_pi_pulse = remake(half_pi_pulse,u0=rho_vec2)
 			if(method=="DiffEqDefault")
-				sol = solve(half_pi_pulse)
+				if(DiffEqSensealg=="nothing")
+					sol = solve(half_pi_pulse,saveat=dt_control)
+				else
+					sol = solve(half_pi_pulse,saveat=dt_control,sensealg=DiffEqSensealg)
+				end
 			else
-				sol = solve(half_pi_pulse,method)
+				if(DiffEqSensealg=="nothing")
+					sol = solve(half_pi_pulse,method,saveat=dt_control)
+				else
+					sol = solve(half_pi_pulse,method,saveat=dt_control,sensealg=DiffEqSensealg)
+				end
 			end
-			rho_echo = [rho_echo sol.u[:,end]]
+			rho_echo = [rho_echo sol[:,end]]
 		end
 
 	end

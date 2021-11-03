@@ -1,9 +1,9 @@
-#using Zygote
-using ReverseDiff
+using DiffEqSensitivity
+using Zygote
+#using ReverseDiff
 using Random
 using LinearAlgebra
 using DifferentialEquations#,DiffEqFlux
-using DiffEqSensitivity
 #using ForwardDiff
 using GalacticOptim,Optim,NLopt
 using Plots
@@ -37,7 +37,7 @@ rho_u0 = [0.0;0.0;0.0;0.0]
 rho_v0 = [0.0;0.0;0.0;0.0]
 rho_u0[fromState+1] = 1.0
 
-T_Ramsey = 1.0*1000#10.0 * 1000
+T_Ramsey = 1.0*GLOQ.GLOQ_MICRO_SEC
 N_dark_times = 21#101
 t_dark_times = zeros(Float64,N_dark_times)
 dt = T_Ramsey/(N_dark_times-1)
@@ -52,7 +52,7 @@ rho_Ramsey_u,rho_Ramsey_v = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
 				 TC,t_dark_times,N_states)
 population_Ramsey = GLOQ.get_population(rho_Ramsey_u)
 
-fig=plot(t_dark_times./1000.0,population_Ramsey)
+fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_Ramsey)
 display(fig)
 #################################################
 # Learn parameters
@@ -69,9 +69,9 @@ rho_Ramsey_u_guess,rho_Ramsey_v_guess = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
 				 TC,t_dark_times,N_states;initial_type = "states")
 population_guess= GLOQ.get_population(rho_Ramsey_u_guess)
 
-plot!(fig,t_dark_times./1000.0,population_guess,line=(:dash),legend=:outerright,)
+plot!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess,line=(:dash),legend=:outerright,)
 display(fig)
-fig2 = plot(t_dark_times./1000.0,population_guess-population_Ramsey,legend=:outerright,)
+fig2 = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess-population_Ramsey,legend=:outerright,)
 display(fig2)
 ##################################################################################################
 global function_call
@@ -81,16 +81,16 @@ function loss(p)
 					 [p[4:5];0.0],[p[6:7];0.0],#gamma1,gamma2,
 					 1, # initial state
 					 TC,t_dark_times,N_states;
-					 #method=Tsit5() )
-					 method="DiffEqDefault")
+					 method="DiffEqDefault",
+					 #DiffEqSensealg="nothing") # 240 secs for fminbox
+					 #DiffEqSensealg=QuadratureAdjoint()) # 220 secs for fminbox
+					 DiffEqSensealg=BacksolveAdjoint()) # 144 secs for fminbox
 	_population_Ramsey = GLOQ.get_population(_rho_Ramsey_u)
-	#println(size(_population_Ramsey))
-	#println(size(population_Ramsey))
 	_loss = sum(abs2,_population_Ramsey-population_Ramsey)/N_dark_times
 	return _loss
 end
 println("Initial loss: ",loss(p_initial))
-@time ReverseDiff.gradient(loss,p_initial)
+@time Zygote.gradient(loss,p_initial)
 
 global function_call_num
 function_call_num = 0
@@ -102,9 +102,8 @@ function loss_gala(p,pp)
 					 [p[4:5];0.0],[p[6:7];0.0],#gamma1,gamma2,
 					 1, # initial state
 					 TC,t_dark_times,N_states;
-					 #method = "exponential")
-					 #method="DiffEqDefault")
-					 method=STrapezoid())
+					 method="DiffEqDefault")
+					 #method=STrapezoid())
 	_population_Ramsey = GLOQ.get_population(_rho_Ramsey_u)
 	_loss = sum(abs2,_population_Ramsey-population_Ramsey)/N_dark_times
 	#println("Function call ",function_call_num," Loss: ",_loss)
@@ -155,13 +154,14 @@ println("NLopt LBFGS Optimization with Zygote gradient starts")
 								   ftol_rel=1e-3)
 println("NLopt LBFGS Optimization with Zygote gradient done")
 
+#=
 function_call_num = 0
 println("NLopt LBFGS Optimization with FD gradient starts")
 @time sol_nlopt_LBFGS_fd = solve(prob_fd , Opt(:LD_LBFGS,length(p_initial)),
 								   maxiters=200,
 								   ftol_rel=1e-3)
 println("NLopt LBFGS Optimization with FD gradient done")
-
+=#
 
 
 #=
@@ -196,13 +196,13 @@ rho_Ramsey_u_optim,rho_Ramsey_v_optim = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
 population_optim = GLOQ.get_population(rho_Ramsey_u_optim)
 
 
-plot!(fig2,t_dark_times./1000.0,population_optim-population_Ramsey,
+plot!(fig2,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_Ramsey,
 	  line=(:dash),lab=:false,legend=:outerright,)
 display(fig2)
 
-fig3=plot(t_dark_times./1000.0,population_optim-population_Ramsey,
+fig3=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_Ramsey,
 	  line=(:dash),lab=:false,legend=:outerright,)
 display(fig3)
 
-fig4=plot(t_dark_times./1000.0,population_Ramsey)
-plot!(fig4,t_dark_times./1000.0,population_optim,line=(:dash))
+fig4=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_Ramsey)
+plot!(fig4,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim,line=(:dash))

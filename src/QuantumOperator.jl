@@ -32,6 +32,26 @@ function make_lindblad_operator(HK::Array{Float64,2},HS::Array{Float64,2},L_list
     return LK,LS,LD
 end
 
+function make_lindblad_operator(HK,HS,L_list,N::Int64=0)
+    if(N==0)
+        N = size(HK)[1]
+    end
+    # define an identity operator
+    It = Array{Float64, 2}(I, N, N)
+    # Hamiltonian part
+    #LK = (kron(It,HK) - kron(transpose(HK),It))
+    #LS = (kron(It,HS) - kron(transpose(HS),It))
+    # Disspation part
+    LK = kron(It,It)
+    LS = kron(It,It)
+    LD = kron(It,It)#zeros(Float64,N^2,N^2)
+    for k = 1:length(L_list)
+        LD += kron(L_list[k],L_list[k])-
+              0.5*(kron(It,transpose(L_list[k])*L_list[k] )+kron(transpose(transpose(L_list[k])*L_list[k]),It))
+    end
+    return LK,LS,LD
+end
+
 """
     make_lindblad_operator(H,L_list,N::Int64=0)
 
