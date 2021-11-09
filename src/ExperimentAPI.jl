@@ -107,9 +107,9 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 - N_states: number of states
 - InitialState: initial state of the density matrix
 - method: method to solve the Lindblad system
-	- "exponential": exponential time integrator
-	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
-	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 1. "exponential": exponential time integrator
+ 2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
+ 3. Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Output:
@@ -260,9 +260,9 @@ end
 - N_states: number of states
 - InitialState: initial state of the density matrix
 - method: method to solve the Lindblad system
-	- "exponential": exponential time integrator
-	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
-	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 1. "exponential": exponential time integrator
+ 2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
+ 3. Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Parity event
@@ -324,9 +324,9 @@ end
 - N_states: number of states
 - InitialState: initial state of the density matrix
 - method: method to solve the Lindblad system
-	- "exponential": exponential time integrator
-	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
-	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 1. "exponential": exponential time integrator
+ 2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
+ 3. Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 """
 function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
