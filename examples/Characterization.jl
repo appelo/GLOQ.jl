@@ -158,7 +158,7 @@ function loss_gala(p,p_keywords)
 					 [2.0*pi.*p[7:8];char_noise[3]],
 					 [p[3:4];0.0],[p[5:6];0.0],
 					 0,
-					 TC_01,t_echo_01,N_states)
+					 TC_01,t_ramsey_01,N_states)
 	_population_Ramsey_01 = GLOQ.get_population(_rho_Ramsey_01_u)
 
 	_rho_Ramsey_12_u,_rho_Ramsey_12_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_12,v0_ramsey_12,
@@ -168,7 +168,7 @@ function loss_gala(p,p_keywords)
 					 1,
 					 TC_12,t_ramsey_12,N_states)
 	_population_Ramsey_12 = GLOQ.get_population(_rho_Ramsey_12_u)
-#=
+
 	# Echo experiments
 	_rho_Echo_01_u,_rho_Echo_01_v = GLOQ.EchoParityForwardSolve(u0_echo_01,v0_echo_01,
 					 [2.0*pi.*p[1:2];omegas[3]],omr_echo_01,
@@ -202,12 +202,12 @@ function loss_gala(p,p_keywords)
 					 1,
 					 TC_12,t_t1_12,N_states)
 	_population_T1_12 = GLOQ.get_population(_rho_T1_12_u)
-=#
+
 	################################################################################
 	_loss = sum(abs2,_population_Ramsey_01[:,1:3]-data_ramsey_01)*dt_ramsey_01/T_evaluated_ramsey_01+
-			sum(abs2,_population_Ramsey_12[:,1:3]-data_ramsey_12)*dt_ramsey_12/T_evaluated_ramsey_12#+
-			#sum(abs2,_population_Echo_01[:,1:3]-data_echo_01).*dt_echo_01/T_evaluated_echo_01+
-			#sum(abs2,_population_Echo_12[:,1:3]-data_echo_12).*dt_echo_12/T_evaluated_echo_12+
+			sum(abs2,_population_Ramsey_12[:,1:3]-data_ramsey_12)*dt_ramsey_12/T_evaluated_ramsey_12
+			sum(abs2,_population_Echo_01[:,1:3]-data_echo_01).*dt_echo_01/T_evaluated_echo_01+
+			sum(abs2,_population_Echo_12[:,1:3]-data_echo_12).*dt_echo_12/T_evaluated_echo_12#+
 			#sum(abs2,_population_T1_01[:,1:3]-data_t1_01).*dt_t1_01/T_evaluated_t1_01+
 			#sum(abs2,_population_T1_12[:,1:3]-data_t1_12).*dt_t1_12/T_evaluated_t1_12
 

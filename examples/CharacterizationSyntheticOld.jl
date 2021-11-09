@@ -23,23 +23,30 @@ Plots.default(titlefont=fnt,
 # we should avoid it.
 # NLopt seems to be really fast. Their LBFGS with box constrains is faster than Optim's FMinbox(LBFGS)
 
-########################################################################
-# Step 1: set up the problem
-########################################################################
 N_states = 4;
-# True values to generate the synthtetic data
+########################################################################
 freqs_true = [4.0108; 3.8830; 3.6287];
 omegas_true = 2.0*pi.*freqs_true;
 gamma1_true   = [2.222222e-05; 4.761904e-05; 4.545455e-5];
 gamma2_true   = [4.166667e-05; 6.8965517e-5; 2.3255814e-4];
 char_noise_true = [2e-6,6e-5,1.3e-4];
 
-
-
 ########################################################################
-# Step 1a: known parameters to set up the experiment
-########################################################################
-# Konwn driving frequencies
+#=
+freqs = [4.0108; 3.8830; 3.6287]
+omegas = 2.0*pi.*freqs
+char_noise = [1.5e-6, 5.0e-5, 1.29e-4]
+gamma1   = [2.25e-05; 4.5e-05; 4.25e-5]
+gamma2   = [4.0e-05; 7.0e-05; 2.0e-4]
+=#
+
+freqs = [4.0108; 3.8830; 3.6287];
+omegas = 2.0*pi.*freqs
+char_noise = [1.5e-6, 5.0e-5, 1.0e-4]
+gamma1   = [1.0e-05; 4.0e-05; 4.0e-5]
+gamma2   = [2.5e-05; 5.0e-05; 2.5e-4]
+
+# driving frequency
 omr_t1_01 = 2.0*pi*4.0108
 omr_t1_12 = 2.0*pi*3.8830
 omr_t1_23 = 2.0*pi*3.6287
@@ -52,6 +59,9 @@ omr_echo_01 = 2.0*pi*4.0108
 omr_echo_12 = 2.0*pi*3.8830
 omr_echo_23 = 2.0*pi*3.6287
 
+
+
+
 # width of the control signal
 width = 21.25
 TC_01 = 2.5*width
@@ -62,16 +72,16 @@ TC_12 = 2.5*width
 width = 17.00
 TC_23 = 2.5*width
 
-# Convert the dark time from micro-seconds to nano-seconds
-T_T1_01 = 125.0*GLOQ.GLOQ_MICRO_SEC
-T_T1_12 = 125.0*GLOQ.GLOQ_MICRO_SEC
-T_T1_23 = 125.0*GLOQ.GLOQ_MICRO_SEC
-T_Ramsey_01 = 20.0*GLOQ.GLOQ_MICRO_SEC
-T_Ramsey_12 = 20.0*GLOQ.GLOQ_MICRO_SEC
-T_Ramsey_23 = 10.0*GLOQ.GLOQ_MICRO_SEC
-T_Echo_01 = 40.0*GLOQ.GLOQ_MICRO_SEC
-T_Echo_12 = 20.0*GLOQ.GLOQ_MICRO_SEC
-T_Echo_23 = 10.0*GLOQ.GLOQ_MICRO_SEC
+# in nano second
+T_T1_01 = 125.0*1000.0
+T_T1_12 = 125.0*1000.0
+T_T1_23 = 125.0*1000.0
+T_Ramsey_01 = 20.0*1000.0
+T_Ramsey_12 = 20.0*1000.0
+T_Ramsey_23 = 10.0*1000.0
+T_Echo_01 = 40.0*1000.0
+T_Echo_12 = 20.0*1000.0
+T_Echo_23 = 10.0*1000.0
 
 # data size used for characterization
 n1use = 201
@@ -151,7 +161,7 @@ end
 T_evaluated_echo_23 = t_echo_23[end]
 
 
-# Knwon initial conditions for the quantum system
+# initial conditions
 u0_t1_01 = [1.0;0.0;0.0;0.0]
 u0_t1_12 = [0.0;1.0;0.0;0.0]
 u0_t1_23 = [0.0;0.0;1.0;0.0]
@@ -172,9 +182,6 @@ v0_echo_01 = [0.0;0.0;0.0;0.0]
 v0_echo_12 = [0.0;0.0;0.0;0.0]
 v0_echo_23 = [0.0;0.0;0.0;0.0]
 
-########################################################################
-# Step 1b: read the synthetic data
-########################################################################
 data_t1_01 = readdlm("synthetic_data/t1_01.txt",',')
 data_t1_12 = readdlm("synthetic_data/t1_12.txt",',')
 data_t1_23 = readdlm("synthetic_data/t1_23.txt",',')
@@ -185,64 +192,29 @@ data_echo_01 = readdlm("synthetic_data/echo_01.txt",',')
 data_echo_12 = readdlm("synthetic_data/echo_12.txt",',')
 data_echo_23 = readdlm("synthetic_data/echo_23.txt",',')
 
-########################################################################
-# add multiplicative and additive noise to the synthetic data
-########################################################################
-multiplicative_noise = 1.0.+0.025*randn(n1use)
-additive_noise = 0.02*randn(n1use)
+# add noise to the synthetic data
+multiplicative_noise = 1.0.+0.025*randn(201)
 data_t1_01 .*= multiplicative_noise
-data_t1_01 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n2use)
-additive_noise = 0.025*randn(n2use)
 data_t1_12 .*= multiplicative_noise
-data_t1_12 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n3use)
-additive_noise = 0.025*randn(n3use)
 data_t1_23 .*= multiplicative_noise
-data_t1_23 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n4use)
-additive_noise = 0.025*randn(n4use)
 data_ramsey_01 .*= multiplicative_noise
-data_ramsey_01 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n5use)
-additive_noise = 0.025*randn(n5use)
 data_ramsey_12 .*= multiplicative_noise
-data_ramsey_12 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n6use)
-additive_noise = 0.025*randn(n6use)
 data_ramsey_23 .*= multiplicative_noise
-data_ramsey_23 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n7use)
-additive_noise = 0.025*randn(n7use)
 data_echo_01 .*= multiplicative_noise
-data_echo_01 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n8use)
-additive_noise = 0.025*randn(n8use)
 data_echo_12 .*= multiplicative_noise
-data_echo_12 .+= additive_noise
-
-multiplicative_noise = 1.0.+0.025*randn(n9use)
-additive_noise = 0.025*randn(n9use)
 data_echo_23 .*= multiplicative_noise
-data_echo_23 .+= additive_noise
-# population (probability) must be in the range of [0,1],
-# and the summation of the population for different states must be 1
+
+# population must be in the range of [0,1]
 function correct_noisy_data!(data)
 	_n,_m = size(data)
 	for i = 1:_n
 		for j = 1:_m
-			if(data[i,j]<0.0)
+			if(data[i,j]>1.0)
+				data[i,j] = 1.0
+			elseif(data[i,j]<0.0)
 				data[i,j] = 0.0
 			end
 		end
-		data[i,:] ./= sum(data[i,:])
 	end
 end
 
@@ -256,14 +228,180 @@ correct_noisy_data!(data_ramsey_01)
 correct_noisy_data!(data_ramsey_12)
 correct_noisy_data!(data_ramsey_23)
 
+# initial guess
+p_initial = [freqs; # transition frequencies
+			 char_noise;
+			 gamma1; # parameters for the decoupling
+			 gamma2 # parameters for the dephasing
+ 		 	 ]# charge noise
+####
+
+# upper and lower bound for optimizaiton
+perturbation = [0.02; 0.02; 0.02;  # freqs
+			    2.0; 2.0;  2.0 # charge noise
+		 		0.9; 0.9;  0.9; # gam1
+		 	 	0.9; 0.9;  0.9;   # gma2
+			   ]   # charge noise
+
+#=
+lower_bound = [ 4.00; 3.85; 3.60;
+				1e-6; 5e-5; 1e-3;
+				1e-5; 3e-5; 3e-5;
+				2e-5; 2.5e-5; 2e-4;
+			  ]
+upper_bound = [ 4.10; 3.95; 3.65;
+				3e-6; 7e-5; 2e-3;
+				3e-5; 5e-5; 5e-5;
+				5e-5; 1e-4; 3e-4;
+			  ]
+=#
+
+lower_bound = (1.0.-perturbation).*p_initial
+upper_bound = (1.0.+perturbation).*p_initial
+
 global _function_call = 0
 global _iteration_number = 0
+######################################################################################
 
+function loss_01(p,p_keywords)
+	# Ramsey experiments
+	_rho_Ramsey_01_u,_rho_Ramsey_01_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_01,v0_ramsey_01,
+					 2.0*pi.*[p[1];p_initial[2:3]],omr_ramsey_01,
+					 2.0*pi.*[p[2];p_initial[5:6]],
+					 [p[3];p_initial[8:9]],[p[4];p_initial[11:12]],
+					 0,
+					 TC_01,t_ramsey_01,N_states)
+	_population_Ramsey_01 = GLOQ.get_population(_rho_Ramsey_01_u)
 
+	# Echo experiments
+	_rho_Echo_01_u,_rho_Echo_01_v = GLOQ.EchoParityForwardSolve(u0_echo_01,v0_echo_01,
+					 2.0*pi.*[p[1];p_initial[2:3]],omr_echo_01,
+					 2.0*pi.*[p[2];p_initial[5:6]],
+					 [p[3];p_initial[8:9]],[p[4];p_initial[11:12]],
+					 0,
+					 TC_01,t_echo_01,N_states)
+	_population_Echo_01 = GLOQ.get_population(_rho_Echo_01_u)
+
+	# T1-decay experiments
+	_rho_T1_01_u,_rho_T1_01_v = GLOQ.T1ParityForwardSolve(u0_t1_01,v0_t1_01,
+					 2.0*pi.*[p[1];p_initial[2:3]],omr_t1_01,
+					 2.0*pi.*[p[2];p_initial[5:6]],
+					 [p[3];p_initial[8:9]],[p[4];p_initial[11:12]],
+					 0,
+					 TC_01,t_t1_01,N_states)
+	_population_T1_01 = GLOQ.get_population(_rho_T1_01_u)
+
+	_loss = sum(abs2,_population_Ramsey_01-data_ramsey_01)*dt_ramsey_01/T_evaluated_ramsey_01+
+			sum(abs2,_population_Echo_01-data_echo_01).*dt_echo_01/T_evaluated_echo_01+
+			sum(abs2,_population_T1_01-data_t1_01).*dt_t1_01/T_evaluated_t1_01
+
+	global _function_call
+	_function_call += 1
+	if(_function_call%1==0)
+		println("Function call: ",_function_call," Loss = ",_loss)
+	end
+	return _loss
+end
+
+p_01_initial = [p_initial[1];
+				p_initial[4];
+				p_initial[7];
+				p_initial[10]]
+lower_bound_01 = [lower_bound[1];
+				  lower_bound[4];
+				  lower_bound[7];
+				  lower_bound[10]]
+upper_bound_01 = [upper_bound[1];
+				  upper_bound[4];
+				  upper_bound[7];
+				  upper_bound[10]]
+optimization_function_01 = OptimizationFunction(loss_01, GalacticOptim.AutoZygote())
+prob_01 = GalacticOptim.OptimizationProblem(optimization_function_01, p_01_initial,#p_12,
+										    lb = lower_bound_01, ub = upper_bound_01)
+
+_function_call = 0
+_iteration_number = 0
+@time sol = solve(prob_01 , Opt(:LD_LBFGS,length(p_01_initial)),
+				  maxiters=100,
+				  ftol_rel=1e-3)
+
+p_01 = [sol.u[1];p_initial[2:3];
+		sol.u[2];p_initial[5:6];
+		sol.u[3];p_initial[8:9];
+		sol.u[4];p_initial[11:12]]
+println(p_01)
+######################################################################################
+function loss_12(p,p_keywords)
+	# Ramsey experiments
+	_rho_Ramsey_12_u,_rho_Ramsey_12_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_12,v0_ramsey_12,
+					 2.0*pi.*[p_01[1];p[1];p_01[3]],omr_ramsey_12,
+					 2.0*pi.*[p_01[4];p[2];p_01[6]],
+					 [p_01[7];p[3];p_01[9]],[p_01[10];p[4];p_01[12]],
+					 1,
+					 TC_12,t_ramsey_12,N_states)
+	_population_Ramsey_12 = GLOQ.get_population(_rho_Ramsey_12_u)
+
+	# Echo experiments
+	_rho_Echo_12_u,_rho_Echo_12_v = GLOQ.EchoParityForwardSolve(u0_echo_12,v0_echo_12,
+					 2.0*pi.*[p_01[1];p[1];p_01[3]],omr_echo_12,
+					 2.0*pi.*[p_01[4];p[2];p_01[6]],
+					 [p_01[7];p[3];p_01[9]],[p_01[10];p[4];p_01[12]],
+					 1,
+					 TC_12,t_echo_12,N_states)
+	_population_Echo_12 = GLOQ.get_population(_rho_Echo_12_u)
+
+	# T1-decay experiments
+	_rho_T1_12_u,_rho_T1_12_v = GLOQ.T1ParityForwardSolve(u0_t1_12,v0_t1_12,
+					 2.0*pi.*[p_01[1];p[1];p_01[3]],omr_t1_12,
+					 2.0*pi.*[p_01[4];p[2];p_01[6]],
+					 [p_01[7];p[3];p_01[9]],[p_01[10];p[4];p_01[12]],
+					 1,
+					 TC_12,t_t1_12,N_states)
+	_population_T1_12 = GLOQ.get_population(_rho_T1_12_u)
+
+	_loss = sum(abs2,_population_Ramsey_12-data_ramsey_12)*dt_ramsey_12/T_evaluated_ramsey_12+
+			sum(abs2,_population_Echo_12-data_echo_12).*dt_echo_12/T_evaluated_echo_12+
+			sum(abs2,_population_T1_12-data_t1_12).*dt_t1_12/T_evaluated_t1_12
+
+	global _function_call
+	_function_call += 1
+	if(_function_call%1==0)
+		println("Function call: ",_function_call," Loss = ",_loss)
+	end
+	return _loss
+end
+
+p_12_initial = [p_01[2];
+				p_01[5];
+				p_01[8];
+				p_01[11]]
+lower_bound_12 = [lower_bound[2];
+				  lower_bound[5];
+				  lower_bound[8];
+				  lower_bound[11]]
+upper_bound_12 = [upper_bound[2];
+				  upper_bound[5];
+				  upper_bound[8];
+				  upper_bound[11]]
+optimization_function_12 = OptimizationFunction(loss_12, GalacticOptim.AutoZygote())
+prob_12 = GalacticOptim.OptimizationProblem(optimization_function_12, p_12_initial,#p_12,
+										    lb = lower_bound_12, ub = upper_bound_12)
+
+_function_call = 0
+_iteration_number = 0
+@time sol = solve(prob_12 , Opt(:LD_LBFGS,length(p_12_initial)),
+				  maxiters=100,
+				  ftol_rel=1e-3)
+
+p_12 = [p_01[1];sol.u[1];p_01[3];
+		p_01[4];sol.u[2];p_01[6];
+		p_01[7];sol.u[3];p_01[9];
+		p_01[10];sol.u[4];p_01[12]]
+p_optim = p_12
+println(p_12)
 ########################################################
-# Step 2: define and solve the optimization problem
+# Define loss function
 ########################################################
-# Step 2a: define the loss (objective) function
 function loss_gala(p,p_keywords)
 	# Ramsey experiments
 	_rho_Ramsey_01_u,_rho_Ramsey_01_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_01,v0_ramsey_01,
@@ -362,57 +500,24 @@ function loss_gala(p,p_keywords)
 	return _loss
 end
 
-
-########################################################################
-# Step 2b: initial guess and bounds for target parameters
-########################################################################
-# transition frequency
-freqs = [4.0108; 3.8830; 3.6287];
-omegas = 2.0*pi.*freqs # change things from GHz to radians
-# magnitude of the charge noise
-char_noise = [1.5e-6, 5.0e-5, 1.0e-4]
-# Lindblad parameters
-gamma1   = [1.0e-05; 4.0e-05; 4.0e-5]
-gamma2   = [2.5e-05; 5.0e-05; 2.5e-4]
-# initial guess
-p_initial = [freqs; # transition frequencies
-			 char_noise;
-			 gamma1; # parameters for the decoupling
-			 gamma2 # parameters for the dephasing
- 		 	 ]# charge noise
-
-# upper and lower bound for optimizaiton
+########################################################
+# Optimization
+########################################################
 initial_loss = loss_gala(p_initial,[])
 
-lower_bound = [ 4.00; 3.85; 3.60;
-				1e-6; 5e-5; 1e-4;
-				1e-5; 3e-5; 3e-5;
-				2e-5; 2.5e-5; 2e-4;
-			  ]
-upper_bound = [ 4.10; 3.95; 3.65;
-				3e-6; 7e-5; 2e-4;
-				3e-5; 5e-5; 5e-5;
-				5e-5; 1e-4; 3e-4;
-			  ]
-
-#####################################################################################
-# Step 2c: optimization interface
-#####################################################################################
-# interface for the GalacticOptim with gradient computed by auto-differentiation
-# (with the Zygote package)
 optimization_function_az = OptimizationFunction(loss_gala, GalacticOptim.AutoZygote())
-prob_az = GalacticOptim.OptimizationProblem(optimization_function_az, p_initial;
+prob_az = GalacticOptim.OptimizationProblem(optimization_function_az, p_12,#p_initial,#p_12,
 										    lb = lower_bound, ub = upper_bound)
+
 _function_call = 0
-# solve the optimization problem
+_iteration_number = 0
 @time sol = solve(prob_az , Opt(:LD_LBFGS,length(p_initial)),
-				  maxiters=200,
-				  ftol_rel=1e-3
-				 )
+				  maxiters=100,
+				  ftol_rel=1e-3)
 p_optim = sol.u
 
 ########################################################
-# Step 3: visualization
+# Visualization
 ########################################################
 
 ########################
