@@ -20,71 +20,66 @@ freqs = [4.10817777; 3.88303940; 3.61937188]
 omegas = 2.0*pi.*freqs
 gamma1   = [2.59451982e-05; 4.54296537e-05; 0.0]
 gamma2   = [2.58005604e-05; 9.00000000e-05; 0.0]
-omr = 2.0*pi*(3.8830355 - 2.0e-3)
+omr = 2.0*pi*3.8830355
 HK_free = GLOQ.RotationFrameDiagonal(omegas,omr)
 L1,L2 = GLOQ.RotationFrameLindblad(gamma1,gamma2)
 
 width = 17.00
 TC = 2.5*width
-Ω = 0.5*pi/(TC*sqrt(2.0))
-θ = 0.0
-HK_control,HS_control = GLOQ.RotationFrameRamseyControl(Ω,θ,N_states)
-
-
 
 fromState = 1
 rho_u0 = [0.0;0.0;0.0;0.0]
 rho_v0 = [0.0;0.0;0.0;0.0]
 rho_u0[fromState+1] = 1.0
 
-T_Ramsey = 1.0*GLOQ.GLOQ_MICRO_SEC
-N_dark_times = 21#101
+T_T1 = 10.0*GLOQ.GLOQ_MICRO_SEC
+N_dark_times = 51
 t_dark_times = zeros(Float64,N_dark_times)
-dt = T_Ramsey/(N_dark_times-1)
+dt = T_T1/(N_dark_times-1)
 for i = 1:N_dark_times
 	dark_time = (i-1)*dt
 	t_dark_times[i] = dark_time
 end
-rho_Ramsey_u,rho_Ramsey_v = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+rho_T1_u,rho_T1_v = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
 			     omegas,omr,
 				 gamma1,gamma2,
 				 1, # initial state
 				 TC,t_dark_times,N_states)
-population_Ramsey = GLOQ.get_population(rho_Ramsey_u)
+population_T1 = GLOQ.get_population(rho_T1_u)
 
-fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_Ramsey)
+fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_T1)
 display(fig)
 #################################################
 # Learn parameters
 #################################################
 p_true = [freqs;gamma1[1:2];gamma2[1:2]]
-p_initial = [freqs.-1e-4;0.9.*gamma1[1:2];0.9.*gamma2[1:2]]
-lower_bound = (0.85).*p_true
-upper_bound = (1.15).*p_true
+p_initial = [freqs.-1e-4;0.5.*gamma1[1:2];0.5.*gamma2[1:2]]
+lower_bound = (0.25).*p_true
+upper_bound = (1.5).*p_true
 
-rho_Ramsey_u_guess,rho_Ramsey_v_guess = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+rho_T1_u_guess,rho_T1_v_guess = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
 				 (2*pi).*p_initial[1:3],omr,
 				 [p_initial[4:5];0.0],[p_initial[6:7];0.0],
 				 1, # initial state
 				 TC,t_dark_times,N_states;initial_type = "states")
-population_guess= GLOQ.get_population(rho_Ramsey_u_guess)
+population_guess= GLOQ.get_population(rho_T1_u_guess)
 
 plot!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess,line=(:dash),legend=:outerright,)
 display(fig)
-fig2 = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess-population_Ramsey,legend=:outerright,)
+fig2 = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess-population_T1,legend=:outerright,)
 display(fig2)
 ##################################################################################################
 global function_call
 function loss(p)
-	_rho_Ramsey_u,_rho_Ramsey_v = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+	_rho_T1_u,_rho_T1_v = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
 				     (2*pi).*p[1:3],omr,
 					 [p[4:5];0.0],[p[6:7];0.0],#gamma1,gamma2,
 					 1, # initial state
 					 TC,t_dark_times,N_states;
 					 method="DiffEqDefault",
 					 sensealg=BacksolveAdjoint()) # 144 secs for fminbox
-	_population_Ramsey = GLOQ.get_population(_rho_Ramsey_u)
-	_loss = sum(abs2,_population_Ramsey-population_Ramsey)/N_dark_times
+	_population_T1 = GLOQ.get_population(_rho_T1_u)
+	_loss = sum(abs2,_population_T1-population_T1)/N_dark_times
 	return _loss
 end
 println("Initial loss: ",loss(p_initial))
@@ -95,15 +90,15 @@ function_call_num = 0
 function loss_gala(p,pp)
 	global function_call_num
 	function_call_num += 1
-	_rho_Ramsey_u,_rho_Ramsey_v = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+	_rho_T1_u,_rho_T1_v = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
 				     (2*pi).*p[1:3],omr,
 					 [p[4:5];0.0],[p[6:7];0.0],#gamma1,gamma2,
 					 1, # initial state
 					 TC,t_dark_times,N_states;
 					 method="DiffEqDefault",
 					 sensealg=BacksolveAdjoint())
-	_population_Ramsey = GLOQ.get_population(_rho_Ramsey_u)
-	_loss = sum(abs2,_population_Ramsey-population_Ramsey)/N_dark_times
+	_population_T1 = GLOQ.get_population(_rho_T1_u)
+	_loss = sum(abs2,_population_T1-population_T1)/N_dark_times
 	#println("Function call ",function_call_num," Loss: ",_loss)
 	return _loss
 end
@@ -186,21 +181,21 @@ println("\nNLopt LBFGS with FD gradient: ",sol_nlopt_LBFGS_fd.u," \nLoss:",sol_n
 
 #######################################################################
 
-rho_Ramsey_u_optim,rho_Ramsey_v_optim = GLOQ.RamseyForwardSolve(rho_u0,rho_v0,
+rho_T1_u_optim,rho_T1_v_optim = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
 				 (2*pi).*sol_nlopt_LBFGS.u[1:3],omr,
 				 [sol_nlopt_LBFGS.u[4:5];0.0],[sol_nlopt_LBFGS.u[6:7];0.0],
 				 1,# initial state
 				 TC,t_dark_times,N_states;initial_type = "states")
-population_optim = GLOQ.get_population(rho_Ramsey_u_optim)
+population_optim = GLOQ.get_population(rho_T1_u_optim)
 
 
-plot!(fig2,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_Ramsey,
+plot!(fig2,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_T1,
 	  line=(:dash),lab=:false,legend=:outerright,)
 display(fig2)
 
-fig3=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_Ramsey,
+fig3=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_T1,
 	  line=(:dash),lab=:false,legend=:outerright,)
 display(fig3)
 
-fig4=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_Ramsey)
+fig4=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_T1)
 plot!(fig4,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim,line=(:dash))

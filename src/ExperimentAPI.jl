@@ -87,12 +87,15 @@ function RotationFrameRamseyControl(N::Int64)
 end
 
 """
-    RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
-					   omega::Array{Float64},omega_drive:Float64,
-					   gamma1::Array{Float64},gamma2::Array{Float64},
-					   InitialState::Int64,
-					   TC::Float64,t_dark_times::Array{Float64},
-					   N_states::Int64=0;initial_type="states")
+function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
+						  omega::Array{Float64},omega_drive::Float64,
+						  gamma1::Array{Float64},gamma2::Array{Float64},
+						  InitialState::Int64,
+						  TC::Float64,t_dark_times::Array{Float64},
+						  N_states::Int64=0;
+						  initial_type="states",
+						  method="exponential",
+						  DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
@@ -100,9 +103,14 @@ end
 - omega_drive: driving frequency
 - gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
 - TC: control time of the control signal
-- InitialState: initial state of the density matrix
 - t_dark_times: the dark time in the Ramsey experiment
 - N_states: number of states
+- InitialState: initial state of the density matrix
+- method: method to solve the Lindblad system
+	- "exponential": exponential time integrator
+	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
+	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+- DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Output:
 - rho_ramsey_u,rho_ramsey_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
@@ -198,7 +206,6 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 		# half-pi pusle
 		if(method=="DiffEqDefault")
 			sol = solve(controlled_problem;DiffEqKwargs...)
-			println(size(sol))
 		else
 			sol = solve(controlled_problem,method;DiffEqKwargs...)
 		end
@@ -251,6 +258,15 @@ end
 - TC: control time of the control signal
 - t_dark_times: the dark time in the Ramsey experiment
 - N_states: number of states
+- InitialState: initial state of the density matrix
+- method: method to solve the Lindblad system
+	- "exponential": exponential time integrator
+	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
+	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+- DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
+
+# Parity event
+- Transition frequency will take equal probability to be omega``\\pm``0.5``\\times``charge_noise
 
 # Output:
 - rho_ramsey_u,rho_ramsey_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
@@ -261,96 +277,57 @@ function RamseyParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   		  gamma1::Array{Float64},gamma2::Array{Float64},
 						  InitialState::Int64,
 				   		  TC::Float64,t_dark_times::Array{Float64},
-				   		  N_states::Int64=0;initial_type="states")
-    if(N_states==0)
-		N_states = length(omega)+1
-	end
-	#################################
-	# Step 1: assemble operators
-	#################################
-	# Hamiltonian without control
-	HK1_free = RotationFrameDiagonal(omega-0.5.*charge_noise,omega_drive)
-	HK2_free = RotationFrameDiagonal(omega+0.5.*charge_noise,omega_drive)
-	# Hamiltonain with control
-	Ω = 0.5*pi/(TC*sqrt(InitialState+1.0))
-	θ = 0.0
-	HK_control,HS_control = RotationFrameRamseyControl(Ω,θ,N_states)
-	# Lindblad operator
-	L1,L2 = RotationFrameLindblad(gamma1,gamma2)
-	# Assemble the operators for the vectorized system
-	# Half pi pulse
-	LK1_half_pi,LS1_half_pi,LD = make_lindblad_operator(Matrix(HK_control+HK1_free),Matrix(HS_control),(L1,L2))
-	LK2_half_pi,LS2_half_pi,LD = make_lindblad_operator(Matrix(HK_control+HK2_free),Matrix(HS_control),(L1,L2))
-	# Free evolution
-	LK1_free = make_hamiltonian_operator(Matrix(HK1_free))
-	LK2_free = make_hamiltonian_operator(Matrix(HK2_free))
-	#################################
-	# Step 2: Forward solves
-	#################################
-	# initial conditions
-	if(initial_type == "states")
-		rho_u_initial = (rho_u0*transpose(rho_u0)+rho_v0*transpose(rho_v0))[:]
-		rho_v_initial = (rho_v0*transpose(rho_u0)-rho_u0*transpose(rho_v0))[:]
-		rho_vec0 = [rho_u_initial;rho_v_initial]
-	elseif(initial_type == "density")
-		rho_vec0 = [rho_u0;rho_v0];
-	else
-		println("Error! initial_type must be \"density\" or \"states\"")
-		return
-	end
-	N_dark_times = length(t_dark_times)
-	# Ramsey experiment
-	# flip 1
-	Half_pi_operator1 = exp(0.5*TC*[LD+LS1_half_pi -LK1_half_pi; LK1_half_pi LD+LS1_half_pi])
-	FreeEvolution1 = [ LD -LK1_free;
-					   LK1_free  LD]
-	# flip 2
-	Half_pi_operator2 = exp(0.5*TC*[LD+LS2_half_pi -LK2_half_pi; LK2_half_pi LD+LS2_half_pi])
-	FreeEvolution2 = [ LD -LK2_free;
-			  		   LK2_free  LD]
-	# half-pi pusle
-	rho_vec1_1 = Half_pi_operator1*rho_vec0 # flip 1
-	rho_vec1_2 = Half_pi_operator2*rho_vec0 # flip 2
-	# free propagation for a dark time
-	Free_operator1 = exp(t_dark_times[1]*FreeEvolution1)
-	rho_vec2_1 = Free_operator1*rho_vec1_1 # flip 1
-	Free_operator2 = exp(t_dark_times[1]*FreeEvolution2)
-	rho_vec2_2 = Free_operator2*rho_vec1_2 # flip 2
-	# half-pi pulse
-	rho_ramsey = 0.5.*(Half_pi_operator1*rho_vec2_1+Half_pi_operator2*rho_vec2_2) # average the results
-	for i = 2:N_dark_times
-		# free propagation for a dark time
-		Free_operator1 = exp(t_dark_times[i]*FreeEvolution1)
-		rho_vec2_1 = Free_operator1*rho_vec1_1
-		Free_operator2 = exp(t_dark_times[i]*FreeEvolution2)
-		rho_vec2_2 = Free_operator2*rho_vec1_2
-		# half-pi pulse
-		rho_ramsey = [rho_ramsey 0.5.*(Half_pi_operator1*rho_vec2_1+Half_pi_operator2*rho_vec2_2)]
-	end
+				   		  N_states::Int64=0;
+						  initial_type="states",
+						  method="exponential",
+						  DiffEqKwargs...)
 
-	return rho_ramsey[1:N_states^2,:],rho_ramsey[N_states^2+1:end,:]
+	rho_u1, rho_v1 = RamseyForwardSolve(rho_u0,rho_v0,
+					   		  omega-0.5.*charge_noise,omega_drive,
+					   		  gamma1,gamma2,
+							  InitialState,
+					   		  TC,t_dark_times,
+					   		  N_states;
+							  initial_type,
+							  method,
+							  DiffEqKwargs...)
+	rho_u2, rho_v2 = RamseyForwardSolve(rho_u0,rho_v0,
+							  omega+0.5.*charge_noise,omega_drive,
+							  gamma1,gamma2,
+							  InitialState,
+							  TC,t_dark_times,
+							  N_states;
+							  initial_type,
+							  method,
+							  DiffEqKwargs...)
+	return 0.5.*(rho_u1+rho_u2),0.5.*(rho_v1+rho_v2)
 end
 
 """
-    EchoParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
+    EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 					   omega::Array{Float64},omega_drive::Float64,
 					   gamma1::Array{Float64},gamma2::Array{Float64},
-					   InitalState::Int64,
+					   InitialState::Int64,
 					   TC::Float64,t_dark_times::Array{Float64},
-					   N_states::Int64=0)
+					   N_states::Int64=0;
+					   initial_type="states",
+					   method="exponential",
+					   DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
 - gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
-- InitialState: initial state of the density matrix
 - TC: control time of the control signal
 - t_dark_times: the dark time in the Ramsey experiment
 - N_states: number of states
-
-# Output:
-- rho_echo_u,rho_echo_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- InitialState: initial state of the density matrix
+- method: method to solve the Lindblad system
+	- "exponential": exponential time integrator
+	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
+	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+- DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 """
 function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   omega::Array{Float64},omega_drive::Float64,
@@ -508,13 +485,16 @@ function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 end
 
 """
-    EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
+    EchoParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 					   omega::Array{Float64},omega_drive::Float64,
 					   charge_noise::Array{Float64},
 					   gamma1::Array{Float64},gamma2::Array{Float64},
-					   InitalState::Int64,
+					   InitialState::Int64,
 					   TC::Float64,t_dark_times::Array{Float64},
-					   N_states::Int64=0)
+					   N_states::Int64=0;
+					   initial_type="states",
+					   method="exponential",
+					   DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
@@ -526,6 +506,15 @@ end
 - TC: control time of the control signal
 - t_dark_times: the dark time in the Ramsey experiment
 - N_states: number of states
+- InitialState: initial state of the density matrix
+- method: method to solve the Lindblad system
+	- "exponential": exponential time integrator
+	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
+	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+- DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
+
+# Parity event
+- Transition frequency will take equal probability to be omega``\\pm``0.5``\\times``charge_noise
 
 # Output:
 - rho_echo_u,rho_echo_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
@@ -536,101 +525,48 @@ function EchoParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   gamma1::Array{Float64},gamma2::Array{Float64},
 				   InitialState::Int64,
 				   TC::Float64,t_dark_times::Array{Float64},
-				   N_states::Int64=0;initial_type="states")
+				   N_states::Int64=0;
+				   initial_type="states",
+				   method="exponential",
+				   DiffEqKwargs...)
 
-	if(N_states==0)
-		N_states = length(omega)+1
-	end
-	#################################
-	# Step 1: assemble operators
-	#################################
-	# Hamiltonian without control
-	HK1_free = RotationFrameDiagonal(omega-0.5.*charge_noise,omega_drive)
-	HK2_free = RotationFrameDiagonal(omega+0.5.*charge_noise,omega_drive)
-	# Hamiltonain with control
-	Ω = 0.5*pi/(TC*sqrt(InitialState+1.0))
-	θ = 0.0
-	HK_control,HS_control = RotationFrameRamseyControl(Ω,θ,N_states)
-	# Lindblad operator
-	L1,L2 = RotationFrameLindblad(gamma1,gamma2)
-	# Assemble the operators for the vectorized system
-	# Half pi pulse
-	LK1_half_pi,LS1_half_pi,LD = make_lindblad_operator(Matrix(HK_control+HK1_free),Matrix(HS_control),(L1,L2))
-	LK2_half_pi,LS2_half_pi,LD = make_lindblad_operator(Matrix(HK_control+HK2_free),Matrix(HS_control),(L1,L2))
-	# Free evolution
-	LK1_free = make_hamiltonian_operator(Matrix(HK1_free))
-	LK2_free = make_hamiltonian_operator(Matrix(HK2_free))
-	#################################
-	# Step 2: Forward solves
-	#################################
-	# initial conditions
-	if(initial_type == "states")
-		rho_u_initial = (rho_u0*transpose(rho_u0)+rho_v0*transpose(rho_v0))[:]
-		rho_v_initial = (rho_v0*transpose(rho_u0)-rho_u0*transpose(rho_v0))[:]
-		rho_vec0 = [rho_u_initial;rho_v_initial]
-	elseif(initial_type == "density")
-		rho_vec0 = [rho_u0;rho_v0];
-	else
-		println("Error! initial_type must be \"density\" or \"states\"")
-		return
-	end
-	N_dark_times = length(t_dark_times)
-	# Assemble operators
-	Half_pi_operator1 = exp(0.5*TC*[LD+LS1_half_pi -LK1_half_pi; LK1_half_pi LD+LS1_half_pi])
-	Half_pi_operator2 = exp(0.5*TC*[LD+LS2_half_pi -LK2_half_pi; LK2_half_pi LD+LS2_half_pi])
-	Pi_operator1 = Half_pi_operator1*Half_pi_operator1
-	Pi_operator2 = Half_pi_operator2*Half_pi_operator2
-	FreeEvolution1 = [ LD -LK1_free;
-					  LK1_free  LD]
-	FreeEvolution2 = [ LD -LK2_free;
-					  LK2_free  LD]
-	# half-pi pusle
-	rho_vec1_1 = Half_pi_operator1*rho_vec0
-	rho_vec1_2 = Half_pi_operator2*rho_vec0
-	# free propagation for a dark time
-	Free_operator1 = exp(t_dark_times[1]*FreeEvolution1)
-	rho_vec2_1 = Free_operator1*rho_vec1_1
-	Free_operator2 = exp(t_dark_times[1]*FreeEvolution2)
-	rho_vec2_2 = Free_operator2*rho_vec1_2
-	# pi pulse
-	rho_vec2_1 = Pi_operator1*rho_vec2_1
-	rho_vec2_2 = Pi_operator2*rho_vec2_2
-	# free propagation for the same dark time
-	rho_vec2_1 = Free_operator1*rho_vec2_1
-	rho_vec2_2 = Free_operator2*rho_vec2_2
-	# half-pi pulse
-	rho_echo = 0.5.*(Half_pi_operator1*rho_vec2_1+Half_pi_operator2*rho_vec2_2)
-	for i = 2:N_dark_times
-		# free propagation for a dark time
-		Free_operator1 = exp(t_dark_times[i]*FreeEvolution1)
-		rho_vec2_1 = Free_operator1*rho_vec1_1
-		Free_operator2 = exp(t_dark_times[i]*FreeEvolution2)
-		rho_vec2_2 = Free_operator2*rho_vec1_2
-		# pi pulse
-		rho_vec2_1 = Pi_operator1*rho_vec2_1
-		rho_vec2_2 = Pi_operator2*rho_vec2_2
-		# free propagation for the same dark time
-		rho_vec2_1 = Free_operator1*rho_vec2_1
-		rho_vec2_2 = Free_operator2*rho_vec2_2
-		# half-pi pulse
-		rho_echo = [rho_echo 0.5.*(Half_pi_operator1*rho_vec2_1+Half_pi_operator2*rho_vec2_2)]
-	end
-
-	return rho_echo[1:N_states^2,:],rho_echo[N_states^2+1:end,:]
+	rho_u1, rho_v1 = EchoForwardSolve(rho_u0,rho_v0,
+							  omega-0.5.*charge_noise,omega_drive,
+							  gamma1,gamma2,
+							  InitialState,
+							  TC,t_dark_times,
+							  N_states;
+							  initial_type,
+							  method,
+							  DiffEqKwargs...)
+	rho_u2, rho_v2 = EchoForwardSolve(rho_u0,rho_v0,
+							  omega+0.5.*charge_noise,omega_drive,
+							  gamma1,gamma2,
+							  InitialState,
+							  TC,t_dark_times,
+							  N_states;
+							  initial_type,
+							  method,
+							  DiffEqKwargs...)
+	return 0.5.*(rho_u1+rho_u2),0.5.*(rho_v1+rho_v2)
 end
 
 """
     T1ForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 					   omega::Array{Float64},omega_drive::Float64,
 					   gamma1::Array{Float64},gamma2::Array{Float64},
-					   InitalState::Int64,
+					   InitialState::Int64,
 					   TC::Float64,t_dark_times::Array{Float64},
-					   N_states::Int64=0)
+					   N_states::Int64=0;
+					   initial_type="states",
+					   method="exponential",
+					   DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
+- charge_noise: charge noise
 - gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
 - InitialState: initial state of the density matrix
 - TC: control time of the control signal
@@ -749,9 +685,12 @@ end
 					   omega::Array{Float64},omega_drive::Float64,
 					   charge_noise::Array{Float64},
 					   gamma1::Array{Float64},gamma2::Array{Float64},
-					   InitalState::Int64,
+					   InitialState::Int64,
 					   TC::Float64,t_dark_times::Array{Float64},
-					   N_states::Int64=0)
+					   N_states::Int64=0;
+					   initial_type="states",
+					   method="exponential",
+					   DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
@@ -763,6 +702,15 @@ end
 - TC: control time of the control signal
 - t_dark_times: the dark time in the Ramsey experiment
 - N_states: number of states
+- InitialState: initial state of the density matrix
+- method: method to solve the Lindblad system
+	- "exponential": exponential time integrator
+	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
+	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+- DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
+
+# Parity event
+- Transition frequency will take equal probability to be omega``\\pm``0.5``\\times``charge_noise
 
 # Output:
 - rho_echo_u,rho_echo_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
@@ -773,67 +721,28 @@ function T1ParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   gamma1::Array{Float64},gamma2::Array{Float64},
 				   InitialState::Int64,
 				   TC::Float64,t_dark_times::Array{Float64},
-				   N_states::Int64=0;initial_type="states")
+				   N_states::Int64=0;
+				   initial_type="states",
+				   method="exponential",
+				   DiffEqKwargs...)
 
-	if(N_states==0)
-		N_states = length(omega)+1
-	end
-	#################################
-	# Step 1: assemble operators
-	#################################
-	# Hamiltonian without control
-	HK1_free = RotationFrameDiagonal(omega-0.5.*charge_noise,omega_drive)
-	HK2_free = RotationFrameDiagonal(omega+0.5.*charge_noise,omega_drive)
-	# Hamiltonain with control
-	Ω = 0.5*pi/(TC*sqrt(InitialState+1.0))
-	θ = 0.0
-	HK_control,HS_control = RotationFrameRamseyControl(Ω,θ,N_states)
-	# Lindblad operator
-	L1,L2 = RotationFrameLindblad(gamma1,gamma2)
-	# Assemble the operators for the vectorized system
-	# Half pi pulse
-	LK1_half_pi,LS1_half_pi,LD = make_lindblad_operator(Matrix(HK_control+HK1_free),Matrix(HS_control),(L1,L2))
-	LK2_half_pi,LS2_half_pi,LD = make_lindblad_operator(Matrix(HK_control+HK2_free),Matrix(HS_control),(L1,L2))
-	# Free evolution
-	LK1_free = make_hamiltonian_operator(Matrix(HK1_free))
-	LK2_free = make_hamiltonian_operator(Matrix(HK2_free))
-	#################################
-	# Step 2: Forward solves
-	#################################
-	# initial conditions
-	if(initial_type == "states")
-		rho_u_initial = (rho_u0*transpose(rho_u0)+rho_v0*transpose(rho_v0))[:]
-		rho_v_initial = (rho_v0*transpose(rho_u0)-rho_u0*transpose(rho_v0))[:]
-		rho_vec0 = [rho_u_initial;rho_v_initial]
-	elseif(initial_type == "density")
-		rho_vec0 = [rho_u0;rho_v0];
-	else
-		println("Error! initial_type must be \"density\" or \"states\"")
-		return
-	end
-	N_dark_times = length(t_dark_times)
-	# # Assemble operators
-	Pi_operator1 = exp(TC*[LD+LS1_half_pi -LK1_half_pi; LK1_half_pi LD+LS1_half_pi])
-	Pi_operator2 = exp(TC*[LD+LS2_half_pi -LK2_half_pi; LK2_half_pi LD+LS2_half_pi])
-	FreeEvolution1 = [ LD -LK1_free;
-					  LK1_free  LD]
-	FreeEvolution2 = [ LD -LK2_free;
-				  	  LK2_free  LD]
-	# pi pusle
-	rho_vec1_1 = Pi_operator1*rho_vec0
-	rho_vec1_2 = Pi_operator2*rho_vec0
-	# free propagation for a dark time
-	Free_operator1 = exp(t_dark_times[1]*FreeEvolution1)
-	Free_operator2 = exp(t_dark_times[1]*FreeEvolution2)
-	#rho_vec2_1 = Free_operator1*rho_vec1_1
-	#rho_vec2_1 = Free_operator1*rho_vec1_1
-	rho_T1 = 0.5.*(Free_operator1*rho_vec1_1+Free_operator2*rho_vec1_2)
-	for i = 2:N_dark_times
-		# free propagation for a dark time
-		Free_operator1 = exp(t_dark_times[i]*FreeEvolution1)
-		Free_operator2 = exp(t_dark_times[i]*FreeEvolution2)
-		rho_T1 = [rho_T1 0.5.*(Free_operator1*rho_vec1_1+Free_operator2*rho_vec1_2)]
-	end
-
-	return rho_T1[1:N_states^2,:],rho_T1[N_states^2+1:end,:]
+	rho_u1, rho_v1 = T1ForwardSolve(rho_u0,rho_v0,
+							  omega-0.5.*charge_noise,omega_drive,
+							  gamma1,gamma2,
+							  InitialState,
+							  TC,t_dark_times,
+							  N_states;
+							  initial_type,
+							  method,
+							  DiffEqKwargs...)
+	rho_u2, rho_v2 = T1ForwardSolve(rho_u0,rho_v0,
+							  omega+0.5.*charge_noise,omega_drive,
+							  gamma1,gamma2,
+							  InitialState,
+							  TC,t_dark_times,
+							  N_states;
+							  initial_type,
+							  method,
+							  DiffEqKwargs...)
+	return 0.5.*(rho_u1+rho_u2),0.5.*(rho_v1+rho_v2)
 end

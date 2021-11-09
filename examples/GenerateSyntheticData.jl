@@ -7,9 +7,9 @@ using DifferentialEquations#,DiffEqFlux
 #using ForwardDiff
 using Plots
 using LaTeXStrings
-using GLOQ
+#using GLOQ
 #using ReverseDiff
-#include("../src/GLOQ.jl")
+include("../src/GLOQ.jl")
 pyplot()
 # BlackBoxOptim somehow downgrade some packages and as a result breaks the auto-differentiation with Zygote
 # we should avoid it.
@@ -205,7 +205,7 @@ rho_Ramsey12_u,rho_Ramsey12_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_12,v0_ra
 population_ramsey_12 = GLOQ.get_population(rho_Ramsey12_u)
 
 # Ramsey 2-3
-rho_Ramsey23_u,rho_Ramsey23_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_23,v0_ramsey_23,
+@time rho_Ramsey23_u,rho_Ramsey23_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_23,v0_ramsey_23,
 				 omegas,omr_ramsey_23,
 				 char_noise,
 				 gamma1,gamma2,
@@ -320,9 +320,9 @@ writedlm( string("synthetic_data/echo_01.txt"),  population_echo_01, ',')
 writedlm( string("synthetic_data/echo_12.txt"),  population_echo_12, ',')
 writedlm( string("synthetic_data/echo_23.txt"),  population_echo_23, ',')
 
-writedlm( string("synthetic_data/ramsey_01.txt"),  population_ramsey_01, ',')
-writedlm( string("synthetic_data/ramsey_12.txt"),  population_ramsey_12, ',')
-writedlm( string("synthetic_data/ramsey_23.txt"),  population_ramsey_23, ',')
+#writedlm( string("synthetic_data/ramsey_01.txt"),  population_ramsey_01, ',')
+#writedlm( string("synthetic_data/ramsey_12.txt"),  population_ramsey_12, ',')
+#writedlm( string("synthetic_data/ramsey_23.txt"),  population_ramsey_23, ',')
 
 writedlm( string("synthetic_data/t1_01.txt"),  population_t1_01, ',')
 writedlm( string("synthetic_data/t1_12.txt"),  population_t1_12, ',')
