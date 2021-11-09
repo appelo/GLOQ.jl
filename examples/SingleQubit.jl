@@ -4,7 +4,6 @@ using LinearAlgebra
 using GalacticOptim,NLopt,Optim
 using Plots
 include("../src/GLOQ.jl")
-#using GLOQ
 pyplot()
 
 # System parameters for a simple two level open quantum system
@@ -56,7 +55,6 @@ function loss(p,dummy_parameter)
 	_population_ramsey = GLOQ.get_population(_rho_ramsey_u)
 
 	_loss = sum(abs2,_population_ramsey-population_synthetic)/N_dark_times
-	println(_loss)
 	return _loss#,_population_ramsey
 end
 
@@ -72,7 +70,7 @@ plot_callback = function(p,other_args)
 	plot!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_ramsey,label=["Opt-0" "Opt-1"]
 		 )			#,line = (:dot, 4), marker = ([:hex :hex], 5, 0.1))
 	display(fig)
-    false
+    return false
 end
 
 
@@ -82,6 +80,8 @@ p_initial = [freqs.-1e-4;0.9.*gamma1;0.9.*gamma2]
 # bounds for the optimization
 lower_bound = (0.5).*p_true
 upper_bound = (1.5).*p_true
+
+
 # construct optimization object, use Zygote auto-differentiation to compute the gradient
 loss_gradient = GalacticOptim.OptimizationFunction(loss, GalacticOptim.AutoZygote())
 opt_prob = GalacticOptim.OptimizationProblem(loss_gradient, p_initial,
@@ -108,4 +108,6 @@ println("NLopt LBFGS Optimization starts")
 println("NLopt LBFGS Optimization done")
 =#
 # present the solutions
-println("\nOptimized results: ",sol.u," \nLoss:",sol.minimum," \nError: ",sol.u-p_true)
+println("\nOptimized results: ",sol.u,
+        "\nLoss: ",sol.minimum,
+		"\nError: ",sol.u-p_true)
