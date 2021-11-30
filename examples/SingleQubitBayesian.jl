@@ -3,7 +3,7 @@ using Zygote,ReverseDiff
 using Turing, Distributions, DifferentialEquations
 # Import MCMCChain, Plots, and StatsPlots for visualizations and diagnostics.
 using MCMCChains, Plots, StatsPlots
-using DataFrames
+using CSV,DataFrames
 # Set a seed for reproducibility.
 using Random
 Random.seed!(14);
@@ -27,9 +27,9 @@ rho_v0 = [0.0;0.0]
 rho_u0[initial_state+1] = 1.0
 
 # Duration of the Ramsey experiment, largest dark time
-T_Ramsey = 10.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
+T_Ramsey = 2.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
 # total number of dark time samples
-N_dark_times = 201
+N_dark_times = 41
 t_dark_times = collect(range(0.0, T_Ramsey, length=N_dark_times))
 
 # Forward solve to generate synthetic data
@@ -42,9 +42,10 @@ rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
 
 # Add noise to the synthetic data
-multiplicative_noise = 1.0.+0.025*randn(N_dark_times)
-additive_noise = 0.05*randn(N_dark_times)
-noisy_data = population_synthetic.*multiplicative_noise
+noisy_data = copy(population_synthetic)
+multiplicative_noise = 1.0.+0.05*randn(N_dark_times) # 0.01
+noisy_data .*= multiplicative_noise
+additive_noise = 0.05*randn(N_dark_times) # 0.025
 noisy_data .+= additive_noise
 
 # Physically, noisy data of population must be a probability.
@@ -79,10 +80,14 @@ Turing.setadbackend(:reversediff)
 #Turing.setadbackend(:forwarddiff)
 global sample_number
 @model function RamseyExperiment(data)
-	 σ ~ InverseGamma()
-    _freq ~ truncated(Normal(4.1,2e-4),4.1-5e-4,4.1+5e-4)
-    _gamma1 ~ truncated(Normal(25e-05,1e-5),10e-5,40e-5)
-    _gamma2 ~ truncated(Normal(25e-05,1e-5),10e-5,40e-5)
+	 #σ ~ Normal(0.0,0.025)#InverseGamma(0.1,0.2)
+	 σ ~ Normal(0.0,0.05)#InverseGamma(0.1,0.2)
+	#_freq ~ truncated(Normal(4.1,5e-5),4.1-5e-4,4.1+5e-4)
+	#_gamma1 ~ truncated(Normal(25e-05,2.5e-5),10e-5,40e-5)
+	#_gamma2 ~ truncated(Normal(25e-05,2.5e-5),10e-5,40e-5)
+    _freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)
+    _gamma1 ~ truncated(Normal(25e-05,5e-5),10e-5,40e-5)
+    _gamma2 ~ truncated(Normal(25e-05,5e-5),10e-5,40e-5)
 
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
 					 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
@@ -104,11 +109,13 @@ end
 model = RamseyExperiment(noisy_data)
 
 sample_number = 0
-@time chain = sample(model, MH(),500)
+#@time chain = sample(model, Gibbs(MH()),250)
+@time chain = sample(model, MH(),5000)
 display(plot(chain))
 display(chain)
-
+#########################################
 # extact the data value from the chain
+#########################################
 chain_data = DataFrame(chain)
 freq_mean = mean(chain_data._freq)
 gamma1_mean = mean(chain_data._gamma1)
@@ -123,8 +130,31 @@ rho_chain_mean_u,rho_chain_mean_v = GLOQ.RamseyForwardSolve(
 population_chain_mean = GLOQ.get_population(rho_chain_mean_u)
 fig_result = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_chain_mean,label=["Mean-0" "Mean-1"])
 scatter!(fig_result,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,label=["Noisy data-0" "Noisy data-1"])
-display(fig_result)
+#display(fig_result)
 
 fig_result2 = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_chain_mean,label=["Mean-0" "Mean-1"])
 scatter!(fig_result2,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic,label=["Data-0" "Data-1"])
-display(fig_result2)
+#display(fig_result2)
+
+println( "Error of freqs: ",abs(freq_mean-freqs[1]),
+		 " Error of γ₁: ",abs(gamma1_mean-gamma1[1]),
+		 " Error of γ₂: ",abs(gamma2_mean-gamma2[1]) )
+#CSV.write("data/chain_10000.csv", chain_data)
+
+CSV.write("data/chain_5000_2.csv", chain_data)
+# mcse: Monte-Carlo standard error
+#	    Monte Carlo Standard Error (MCSE) is an estimate of the inaccuracy of Monte Carlo samples,
+#		usually regarding the expectation of posterior samples, E(theta), from Monte Carlo or
+#		Markov chain Monte Carlo (MCMC) algorithms, such as with the LaplacesDemon or
+#		LaplacesDemon.hpc functions.
+# ess:  Effective sample size
+#		https://en.wikipedia.org/wiki/Effective_sample_size
+# rhat: R-hat convergence diagnostic
+#		Rhat: potential scale reduction statistic
+#		One way to monitor whether a chain has converged to the equilibrium distribution is to
+#	    compare its behavior to other randomly initialized chains. This is the motivation for the
+#		potential scale reduction statistic, split-R̂ . The split-R̂  statistic measures the ratio
+#		of the average variance of draws within each chain to the variance of the pooled draws
+#		across chains; if all chains are at equilibrium, these will be the same and R̂  will be one.
+#		If the chains have not converged to a common distribution, the R̂  statistic will be greater
+#		 than one (see Gelman et al. 2013, Stan Development Team 2018).
