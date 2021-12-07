@@ -47,7 +47,7 @@ and the dephasing operator ${\cal L}_{2}$ is in the form
 The $T_1$ relaxation time for energy level $k$ is $T_{1,k}=1/\gamma_{1,k}$,
 and the $T_2$ dephasing time for energy level $k$ is $T_{2,k}=1/\gamma_{2,k}$.
 
-# Lindblad equation with charge noise
+## Lindblad equation with charge noise
 We also consider the Lindblad model with noise. The system Hamiltonian is
 ```math
 H_{\rm 0} = \left[
@@ -61,7 +61,7 @@ H_{\rm 0} = \left[
 \right],
 ```
 and 
-$$\widetilde{\omega}_{k,k+1}=\omega_{k,k+1}-\pi d_{k,k+1}\cos\left(2\pi\frac{C+pe}{2e}\right).$$
+$$\widetilde{\omega}_{k,k+1}=\omega_{k,k+1}-\pi d_{k,k+1}\cos\left(\pi\frac{C+pe}{e}\right).$$
 Here, $p\in\{0,1\}$ is the parity, $d_{k,k+1}$ is the charge dispersion,
 $C$ is the charge over the Josephson junction, $e$ is the charge of an electron, and $\frac{C}{e}\in[0,1]$.
 
