@@ -16,6 +16,29 @@ function get_population(rho_vec::Array{ComplexF64,1})
     end
     return P
 end
+
+function get_population(rho_vec::Array{Float64,1})
+	N = size(rho_vec)[1]
+	N = Int64(sqrt(N))
+    P = zeros(Float64,N)
+	# compute the trace for R
+    for j = 1:N
+        P[j] = P[j] + rho_vec[1+(j-1)*(N+1)]
+    end
+    return P
+end
+
+function get_population_UQ_vector(rho_vec)
+	N = size(rho_vec)[1]
+	N = Int64(sqrt(N))
+    #P = zeros(Float64,N)
+	# compute the trace for R
+	P = rho_vec[1]
+    for j = 2:N
+        P = [P;rho_vec[1+(j-1)*(N+1)]]
+    end
+    return P
+end
 """
 	get_population(rho_vec_history::Array{Float64,2})
 
@@ -38,6 +61,12 @@ function get_population(rho_u_history::Array{Float64,2})
 end
 
 function get_population(rho_u_history::Array{Array{Float64}})
+	N,nt = size(rho_u_history)
+	N = Int64(sqrt(N))
+    return transpose(rho_u_history[1:N+1:end,:])
+end
+
+function get_population_UQ_matrix(rho_u_history)
 	N,nt = size(rho_u_history)
 	N = Int64(sqrt(N))
     return transpose(rho_u_history[1:N+1:end,:])

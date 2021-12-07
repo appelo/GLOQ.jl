@@ -107,7 +107,30 @@ function make_hamiltonian_operator(HK::Array{Float64,2},HS::Array{Float64,2},N::
     return LK,LS
 end
 
+function make_hamiltonian_operator(HK,HS,N::Int64=0)
+    if(N==0)
+        N = size(HK)[1]
+    end
+    # define an identity operator
+    It = Array{Float64, 2}(I, N, N)
+    # Hamiltonian part
+    LK = (kron(It,HK) - kron(transpose(HK),It))
+    LS = (kron(It,HS) - kron(transpose(HS),It))
+    return LK,LS
+end
+
 function make_hamiltonian_operator(HK::Array{Float64,2},N::Int64=0)
+    if(N==0)
+        N = size(HK)[1]
+    end
+    # define an identity operator
+    It = Array{Float64, 2}(I, N, N)
+    # Hamiltonian part
+    LK = (kron(It,HK) - kron(transpose(HK),It))
+    return LK
+end
+
+function make_hamiltonian_operator(HK,N::Int64=0)
     if(N==0)
         N = size(HK)[1]
     end
