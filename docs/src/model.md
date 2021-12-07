@@ -44,8 +44,8 @@ and the dephasing operator ${\cal L}_{2}$ is in the form
 \end{array}
 \right].
 ```
-The $T_1$ relaxation time for energy level $k$ is $T_{1,k}=1/\gamma_{1,k}$,
-and the $T_2$ dephasing time for energy level $k$ is $T_{2,k}=1/\gamma_{2,k}$.
+The thermal relaxation time for energy level $k$ is $T_{1,k}=1/\gamma_{1,k}$,
+and the  dephasing time for energy level $k$ is $T_{2,k}=1/\gamma_{2,k}$.
 
 ## Lindblad equation with charge noise
 We also consider the Lindblad model with noise. The system Hamiltonian is

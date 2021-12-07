@@ -41,7 +41,7 @@ t_dark_times = collect(range(0.0, T_Ramsey, length=N_dark_times))
 rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 			     omegas,omr, # transition frequencies, drive frequency
-				 gamma1,gamma2, # decay and dephasing parameters ?
+				 gamma1,gamma2, # decay and dephasing parameters 
 				 initial_state, # initial state
 				 TC,t_dark_times,N_states) # control time, dark time, total number of states
 population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
@@ -86,13 +86,12 @@ global sample_number
 	 # Priori distribution
 	σ ~ InverseGamma()
     _freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)
-    _gamma1 ~ truncated(Normal(25e-05,1e-5),20e-5,30e-5)
-    _gamma2 ~ truncated(Normal(25e-05,1e-5),20e-5,30e-5)
+    _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
 
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
 					 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 				     2.0*pi*[_freq],omr, # transition frequencies, drive frequency
-					 [_gamma1],[_gamma2], # decay and dephasing parameters ?
+					 gamma1,[_gamma2], # decay and dephasing parameters ?
 					 initial_state, # initial state
 					 TC,t_dark_times,N_states;
 					 method="exponential")
@@ -124,7 +123,6 @@ display(chain[BurnIn+1:end])
 ```
 chain_data = DataFrame(chain[BurnIn+1:end])
 freq_mean = mean(chain_data._freq)
-gamma1_mean = mean(chain_data._gamma1)
 gamma2_mean = mean(chain_data._gamma2)
 ```
 #### The Ramsey curve corresponding to the mean value of the chain
@@ -132,7 +130,7 @@ gamma2_mean = mean(chain_data._gamma2)
 rho_chain_mean_u,rho_chain_mean_v = GLOQ.RamseyForwardSolve(
 				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 				 2.0*pi*[freq_mean],omr, # transition frequencies, drive frequency
-				 [gamma1_mean],[gamma2_mean], # decay and dephasing parameters ?
+				 gamma1,[gamma2_mean], # decay and dephasing parameters ?
 				 initial_state, # initial state
 				 TC,t_dark_times,N_states;
 				 method="exponential")
@@ -157,7 +155,6 @@ display(fig_mean_vs_syn)
 #### Display the difference between the mean value of the chain and the true value
 ```
 println( "Error of freqs: ",abs(freq_mean-freqs[1]),
-		 " Error of γ₁: ",abs(gamma1_mean-gamma1[1]),
 		 " Error of γ₂: ",abs(gamma2_mean-gamma2[1]) )
 ```
 #### Results:
@@ -171,12 +168,11 @@ for i = 1:1000
 	global fig_result
 	sample_ind = rand(1:chain_size-BurnIn)
     freq_sample = chain_data._freq[sample_ind]
-    gamma1_sample = chain_data._gamma1[sample_ind]
     gamma2_sample = chain_data._gamma2[sample_ind]
     rho_sample_u,rho_sample_v = GLOQ.RamseyForwardSolve(
 				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 				 2.0*pi*[freq_sample],omr, # transition frequencies, drive frequency
-				 [gamma1_sample],[gamma2_sample], # decay and dephasing parameters ?
+				 gamma1,[gamma2_sample], # decay and dephasing parameters 
 				 initial_state, # initial state
 				 TC,t_dark_times,N_states;
 				 method="exponential")
