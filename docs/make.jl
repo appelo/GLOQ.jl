@@ -10,7 +10,6 @@ makedocs(
     authors = "Daniel Appelo <appeloda@msu.edu> and contributors.",
     pages = Any[
         "Home" => "index.md",
-        "Workflow" => ["workflow.md","Example2.md","Example3.md"],
         "Types" => "types.md",
         "Methods" => "methods.md",
         "Index" => "function-index.md",
