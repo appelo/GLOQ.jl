@@ -8,9 +8,10 @@ makedocs(
     sitename = "GLOQ.jl",
     modules = [GLOQ],
     authors = "Daniel Appelo <appeloda@msu.edu> and contributors.",
-    pages = Any[
+    pages = [
         "Home" => "index.md",
-        "Workflow" => "workflow.md",
+        "Workflow and examples" => 
+            Any["Workflow"=>"workflow.md","Example 1" => "example1.md"],
         "Types" => "types.md",
         "Methods" => "methods.md",
         "Index" => "function-index.md",
