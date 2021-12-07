@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example 1 · GLOQ.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">GLOQ.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Workflow and examples</span><ul><li><a class="tocitem" href="../workflow/">Workflow</a></li><li class="is-active"><a class="tocitem" href>Example 1</a><ul class="internal"><li><a class="tocitem" href="#Example-1:-characterization-of-the-Ramsey-experiment-with-single-qudit"><span>Example 1: characterization of the Ramsey experiment with single qudit</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../types/">Types</a></li><li><a class="tocitem" href="../methods/">Methods</a></li><li><a class="tocitem" href="../function-index/">Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Workflow and examples</a></li><li class="is-active"><a href>Example 1</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example 1</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/appelo/GLOQ.jl/blob/master/docs/src/example1.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Example-1:-characterization-of-the-Ramsey-experiment-with-single-qudit"><a class="docs-heading-anchor" href="#Example-1:-characterization-of-the-Ramsey-experiment-with-single-qudit">Example 1: characterization of the Ramsey experiment with single qudit</a><a id="Example-1:-characterization-of-the-Ramsey-experiment-with-single-qudit-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1:-characterization-of-the-Ramsey-experiment-with-single-qudit" title="Permalink"></a></h2><h3 id="Step-1:-generate-the-synthetic-data"><a class="docs-heading-anchor" href="#Step-1:-generate-the-synthetic-data">Step 1: generate the synthetic data</a><a id="Step-1:-generate-the-synthetic-data-1"></a><a class="docs-heading-anchor-permalink" href="#Step-1:-generate-the-synthetic-data" title="Permalink"></a></h3><pre><code class="nohighlight hljs"># System parameters for a simple two level open quantum system
+N_states = 2; # number of states
+freqs = [4.1] # transition frequency in GHz
+omegas = 2.0*pi.*freqs # change to angular frequency
+gamma1   = [25e-05] # decay???
+gamma2   = [25e-05] # dephasing???
+omr = 2.0*pi*(4.1 - 1.0e-3) # drive frequency
+TC = 2.5*17.0 # total control time
+
+# Initial state
+initial_state = 0
+rho_u0 = [0.0;0.0]
+rho_v0 = [0.0;0.0]
+rho_u0[initial_state+1] = 1.0
+
+# Duration of the Ramsey experiment, largest dark time
+T_Ramsey = 10.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
+# total number of dark time samples
+N_dark_times = 201
+t_dark_times = collect(range(0.0, T_Ramsey, length=N_dark_times))
+
+# Forward solve to generate synthetic data
+rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
+				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
+			   omegas,omr, # transition frequencies, drive frequency
+				 gamma1,gamma2, # decay and dephasing parameters
+				 initial_state, # initial state
+				 TC,t_dark_times,N_states) # control time, dark time, total number of states
+population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)</code></pre><h3 id="Step-2:-define-the-loss-(objective)-function,-initial-guess-and-optimization-bounds"><a class="docs-heading-anchor" href="#Step-2:-define-the-loss-(objective)-function,-initial-guess-and-optimization-bounds">Step 2: define the loss (objective) function, initial guess and optimization bounds</a><a id="Step-2:-define-the-loss-(objective)-function,-initial-guess-and-optimization-bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-define-the-loss-(objective)-function,-initial-guess-and-optimization-bounds" title="Permalink"></a></h3><h4 id="Step-2a:-define-the-loss-(objective)-function.-Here,-we-use-the-normalized-l2-mismatch."><a class="docs-heading-anchor" href="#Step-2a:-define-the-loss-(objective)-function.-Here,-we-use-the-normalized-l2-mismatch.">Step 2a: define the loss (objective) function. Here, we use the normalized l2-mismatch.</a><a id="Step-2a:-define-the-loss-(objective)-function.-Here,-we-use-the-normalized-l2-mismatch.-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2a:-define-the-loss-(objective)-function.-Here,-we-use-the-normalized-l2-mismatch." title="Permalink"></a></h4><pre><code class="nohighlight hljs">function loss(p,dummy_parameter)
+	# forward solve for Ramsey experiment
+	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
+		rho_u0,rho_v0,
+		(2*pi).*[p[1]],omr,
+		[p[2]],[p[3]],#gamma1,gamma2,
+		initial_state, # initial state
+		TC,t_dark_times,N_states)
+	_population_ramsey = GLOQ.get_population(_rho_ramsey_u)
+
+	# compute the mismatch with synthetic data in l2 sense
+	_loss = sum(abs2,_population_ramsey-population_synthetic)/N_dark_times
+	return _loss
+end</code></pre><h4 id="Step-2b:-define-a-callback-function-to-plot-while-optimizing"><a class="docs-heading-anchor" href="#Step-2b:-define-a-callback-function-to-plot-while-optimizing">Step 2b: define a callback function to plot while optimizing</a><a id="Step-2b:-define-a-callback-function-to-plot-while-optimizing-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2b:-define-a-callback-function-to-plot-while-optimizing" title="Permalink"></a></h4><pre><code class="nohighlight hljs">plot_callback = function(p,other_args)
+	rho_ramsey_u,rho_ramsey_v = GLOQ.RamseyForwardSolve(
+		rho_u0,rho_v0,
+		(2*pi).*[p[1]],omr,
+		[p[2]],[p[3]],#gamma1,gamma2,
+		initial_state, # initial state
+		TC,t_dark_times,N_states)
+		population_ramsey = GLOQ.get_population(rho_ramsey_u)
+	fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic,label=[&quot;Syn-0&quot; &quot;Syn-1&quot;],
+	line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5)  )
+	plot!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_ramsey,label=[&quot;Opt-0&quot; &quot;Opt-1&quot;])			
+	display(fig)
+	return false
+end</code></pre><h4 id="Step-2c:-define-a-callback-function-to-plot-while-optimizing"><a class="docs-heading-anchor" href="#Step-2c:-define-a-callback-function-to-plot-while-optimizing">Step 2c: define a callback function to plot while optimizing</a><a id="Step-2c:-define-a-callback-function-to-plot-while-optimizing-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2c:-define-a-callback-function-to-plot-while-optimizing" title="Permalink"></a></h4><pre><code class="nohighlight hljs">p_true = [freqs;gamma1;gamma2] # values to generate synthetic data
+# initial guess for the optimization
+p_initial = [freqs.-1e-4;0.9.*gamma1;0.9.*gamma2]
+# bounds for the optimization
+lower_bound = (0.5).*p_true
+upper_bound = (1.5).*p_true</code></pre><h3 id="Step-3:-solve-the-optimization-problem"><a class="docs-heading-anchor" href="#Step-3:-solve-the-optimization-problem">Step 3: solve the optimization problem</a><a id="Step-3:-solve-the-optimization-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3:-solve-the-optimization-problem" title="Permalink"></a></h3><h4 id="Step-3a:-define-the-optimization-object-(objective-function-and-its-gradient)"><a class="docs-heading-anchor" href="#Step-3a:-define-the-optimization-object-(objective-function-and-its-gradient)">Step 3a: define the optimization object (objective function and its gradient)</a><a id="Step-3a:-define-the-optimization-object-(objective-function-and-its-gradient)-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3a:-define-the-optimization-object-(objective-function-and-its-gradient)" title="Permalink"></a></h4><pre><code class="nohighlight hljs">#  GalacticOptim.OptimizationFunction( objective function, how to compute the gradient ).
+#  Here, we use auto-differentiation with Zygoe to compute the gradient
+loss_gradient = GalacticOptim.OptimizationFunction(loss, GalacticOptim.AutoZygote())
+opt_prob = GalacticOptim.OptimizationProblem(loss_gradient, p_initial,
+	lb = lower_bound, ub = upper_bound)</code></pre><h4 id="Step-3b:-solve-the-optimization-problem-with-the-Optim-interface-of-GalacticOptim"><a class="docs-heading-anchor" href="#Step-3b:-solve-the-optimization-problem-with-the-Optim-interface-of-GalacticOptim">Step 3b: solve the optimization problem with the Optim interface of GalacticOptim</a><a id="Step-3b:-solve-the-optimization-problem-with-the-Optim-interface-of-GalacticOptim-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3b:-solve-the-optimization-problem-with-the-Optim-interface-of-GalacticOptim" title="Permalink"></a></h4><pre><code class="nohighlight hljs">println(&quot;Optim Fminbox(LBFGS) Optimization starts&quot;)
+@time sol = GalacticOptim.solve(opt_prob ,Fminbox(LBFGS()),
+	cb = plot_callback, # call back
+	outer_iterations = 20, # outer iteration number for Optim&#39;s fminbox
+	iterations = 10, # inner iteration number for Optim&#39;s fminbox
+	show_trace=true, # verbose, present optimization infos or not
+	f_tol = 1e-3,
+	outer_f_tol = 1e-3)
+println(&quot;Optim Fminbox(LBFGS) Optimization done&quot;)</code></pre><h4 id="Step-3c:-presnet-the-result"><a class="docs-heading-anchor" href="#Step-3c:-presnet-the-result">Step 3c: presnet the result</a><a id="Step-3c:-presnet-the-result-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3c:-presnet-the-result" title="Permalink"></a></h4><pre><code class="nohighlight hljs"># present the solutions
+# present the solutions
+println(&quot;\nOptimized results: &quot;,sol.u,
+	&quot;\nLoss: &quot;,sol.minimum,
+	&quot;\nError: &quot;,sol.u-p_true)</code></pre><h4 id="Compare-optimized-results-and-the-synthetic-data."><a class="docs-heading-anchor" href="#Compare-optimized-results-and-the-synthetic-data.">Compare optimized results and the synthetic data.</a><a id="Compare-optimized-results-and-the-synthetic-data.-1"></a><a class="docs-heading-anchor-permalink" href="#Compare-optimized-results-and-the-synthetic-data." title="Permalink"></a></h4><p><img src="Example1_result.png" alt="Example 1: Optimized results v.s. Synthetic data"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../workflow/">« Workflow</a><a class="docs-footer-nextpage" href="../types/">Types »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Tuesday 7 December 2021 04:37">Tuesday 7 December 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
