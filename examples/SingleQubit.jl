@@ -28,7 +28,7 @@ t_dark_times = collect(range(0.0, T_Ramsey, length=N_dark_times))
 rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 			     omegas,omr, # transition frequencies, drive frequency
-				 gamma1,gamma2, # decay and dephasing parameters ?
+				 gamma1,gamma2, # decay and dephasing parameters 
 				 initial_state, # initial state
 				 TC,t_dark_times,N_states) # control time, dark time, total number of states
 population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
@@ -51,7 +51,7 @@ function loss(p,dummy_parameter)
 	_population_ramsey = GLOQ.get_population(_rho_ramsey_u)
 
 	_loss = sum(abs2,_population_ramsey-population_synthetic)/N_dark_times
-	return _loss#,_population_ramsey
+	return _loss
 end
 
 plot_callback = function(p,other_args)

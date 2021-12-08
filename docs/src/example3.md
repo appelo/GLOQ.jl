@@ -1,6 +1,12 @@
 
 ## Example 3: uncertainty quantification for a single qubit Ramsey experiment with noise with the Metropolis-Hastings algorithm
-```
+In this example, we apply the Metropolis-Hastings algorithm to do uncertainty quantification for a single qubit Ramsey experiment with noisy synthetic data.
+We provide an interface to the Julia Bayesian inference  package `Turing.jl`.
+The code is corresponding to `GLOQ.jl/examples/SingleQubitBayesian.jl"`, and it can 
+be executed by `cd("examples");include("SingleQubitBayesian.jl")`.
+
+#### Load the needed packages
+```julia
 using LinearAlgebra
 using Turing, Distributions, DifferentialEquations
 # Import MCMCChain, Plots, and StatsPlots for visualizations and diagnostics.
@@ -14,7 +20,8 @@ include("../src/GLOQ.jl")
 pyplot()
 ```
 ### Step 1: generate the synthetic data
-```
+#### Define the system parameters 
+```julia
 N_states = 2; # number of states
 freqs = [4.1] # transition frequency in GHz
 omegas = 2.0*pi.*freqs # change to angular frequency
@@ -35,9 +42,8 @@ T_Ramsey = 5.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
 N_dark_times = 101
 t_dark_times = collect(range(0.0, T_Ramsey, length=N_dark_times))
 ```
-#### Forward solve to generate synthetic data
-#### Ramsey experiment 
-```
+#### Forward solve simuulating the single qubit Ramsey experiment to generate synthetic data without noise.
+```julia
 rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 			     omegas,omr, # transition frequencies, drive frequency
@@ -46,8 +52,8 @@ rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 				 TC,t_dark_times,N_states) # control time, dark time, total number of states
 population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
 ```
-#### Add multiplicative and additive noise to the synthetic data
-```
+#### Add multiplicative and additive noise to the generated synthetic data
+```julia
 noisy_data = copy(population_synthetic)
 multiplicative_noise = 1.0.+0.05*randn(N_dark_times) # 0.01
 noisy_data .*= multiplicative_noise
@@ -55,7 +61,7 @@ additive_noise = 0.05*randn(N_dark_times) # 0.025
 noisy_data .+= additive_noise
 ```
 #### Normalize the nosiy data so that it is a population between [0,1]
-```
+```julia
 for j = 1:N_states
 	shift = minimum(noisy_data[:,j])
 	if(shift<0.0)
@@ -68,7 +74,7 @@ for i = 1:N_dark_times
 end
 ```
 #### Plot the noisy data
-```
+```julia
 fig = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic,
 		   label=["Syn-0" "Syn-1"])
 scatter!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
@@ -78,16 +84,26 @@ p_true = [freqs;gamma1;gamma2]
 ```
 #### Synthetic data with and without noise
 ![Example 3: synthetic noisy data](Example3_noisy_data.png)
-### Step 2: define the model interface to the Turing.jl and apply the MCMC algorithm
-#### Step 2a: define the model
-```
+#### Synthetic data with and without noise. 
+- Syn-0: synthetic data without noise for the energy level 0;
+- Syn-1: synthetic data without noise for the energy level 1;
+- Noisy-0: noisy data for the energy level 0;
+- Noisy-1: noisy data for the energy level 1.
+### Step 2: use `@model` macro to provide interface to the Turing.jl and apply the MCMC algorithm
+#### Step 2a: use `@model` macro to provide interface to the Turing.jl
+
+Below, $\sigma$ is a hyper parameter, `_freq` and `_gamma2` are the transition frequency and the dephasing parameter $\gamma_2$.
+`_freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)` means we sample the random variable `_freq` from a truncated normal distribution
+whose mean is 4.1GHz and standard deviation is 1e-4GHz, and its range is $[4.1-5e-4,4.1+5e-4]$. Then, a forward solve with sampled parameters
+is performed. 
+```julia
 global sample_number
 @model function RamseyExperiment(data)
 	 # Priori distribution
-	σ ~ InverseGamma()
+	σ ~ InverseGamma() # random hyper parameter $\sigma$ obeys an Inverse Gamma distribution.
     _freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)
     _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
-
+	# Perform a Forward solve with sampled parameters
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
 					 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 				     2.0*pi*[_freq],omr, # transition frequencies, drive frequency
@@ -107,26 +123,29 @@ end
 
 model = RamseyExperiment(noisy_data)
 ```
-#### Step 2b: apply the Metropolis-Hastings algorithm
-```
+#### Step 2b: use Turing.jl's `sample` function to apply the Metropolis-Hastings algorithm
+```julia
 sample_number = 0
 chain_size = 35000
-@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2,5e-2])), chain_size)
+@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
 BurnIn = 5000
-#@time chain_gmh = sample(model, Gibbs(MH()),5000)
-display(plot(chain[BurnIn+1:end]))
+fig_chain = plot(chain[BurnIn+1:end]);
+xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);
+display(fig_chain)
 display(chain[BurnIn+1:end])
 ```
 ![Example 3: chain](Example3_chain.png)
+#### Generated Markov chain and the corresponding posteriori distribution.
+
 ### Step 3: Present the data
 #### Step 3a: convert the data to DataFrame format and calculate the mean value of the Markov chain
-```
+```julia
 chain_data = DataFrame(chain[BurnIn+1:end])
 freq_mean = mean(chain_data._freq)
 gamma2_mean = mean(chain_data._gamma2)
 ```
-#### The Ramsey curve corresponding to the mean value of the chain
-```
+#### Generate the Ramsey curve corresponding to the mean value of the chain
+```julia
 rho_chain_mean_u,rho_chain_mean_v = GLOQ.RamseyForwardSolve(
 				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
 				 2.0*pi*[freq_mean],omr, # transition frequencies, drive frequency
@@ -141,28 +160,29 @@ scatter!(fig_mean_vs_noisy,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
 		 label=["Noisy data-0" "Noisy data-1"])
 display(fig_mean_vs_noisy)
 ```
-#### The Ramsey curve corresponding to the mean value vs data with noise
 ![Example 3: mean value vs noisy data](Example3_mean_vs_data.png)
-```
+#### The Ramsey curve corresponding to the mean value vs data with noise. Mean-0 and Mean-1: the Ramsey curve corresponding to the mean value of the chain for the energy level 0 and 1. Noisy-0 and Noisy-1: noisy synthetic data for the energy level 0 and 1.
+```julia
 fig_mean_vs_syn = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_chain_mean,
 				   label=["Mean-0" "Mean-1"])
 scatter!(fig_mean_vs_syn,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic,
 		 label=["Syn-0" "Syn-1"])
 display(fig_mean_vs_syn)
 ```
-#### The Ramsey curve corresponding to the mean value vs data without noise
 ![Example 3: mean value vs data without noise](Example3_mean_vs_syn.png)
+#### The Ramsey curve corresponding to the mean value vs synthetic data without noise. Mean-0 and Mean-1: the Ramsey curve corresponding to the mean value of the chain for the energy level 0 and 1. Syn-0 and Syn-1: synthetic data without noise for the energy level 0 and 1.
+
 #### Display the difference between the mean value of the chain and the true value
-```
+```julia
 println( "Error of freqs: ",abs(freq_mean-freqs[1]),
 		 " Error of γ₂: ",abs(gamma2_mean-gamma2[1]) )
 ```
 #### Results:
 ```
-Error of freqs: 3.7845511347001093e-7 Error of γ₁: 4.406514689200315e-7 Error of γ₂: 8.2938489833124e-7
+Error of freqs: 3.7845511347001093e-7 Error of γ₂: 8.2938489833124e-7
 ```
 #### Sample from the Markov chain and perform forward solves
-```
+```julia
 global fig_result
 for i = 1:1000
 	global fig_result
@@ -191,5 +211,5 @@ scatter!(fig_result,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
 	     label=["Noisy data-0" "Noisy data-1"])
 display(fig_result)
 ```
-#### The Ramsey curves based on parameter samples from the posteriori distribution 
 ![Example 3: the Ramsey results corresponding to the posterior distribution and the mean results](Example3_post.png)
+#### Compare the Ramsey curves generated by the samples from the chain, and this particular example is relatively deterministic. Mean-0 and Mean-1: the Ramsey curve corresponding to the mean value of the chain for the energy level 0 and 1. Noisy-0 and Noisy-1: noisy synthetic data for the energy level 0 and 1.

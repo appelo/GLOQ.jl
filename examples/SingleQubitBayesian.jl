@@ -43,9 +43,9 @@ population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
 
 # Add noise to the synthetic data
 noisy_data = copy(population_synthetic)
-multiplicative_noise = 1.0.+0.05*randn(N_dark_times) # 0.01
+multiplicative_noise = 1.0.+0.05*randn(N_dark_times) 
 noisy_data .*= multiplicative_noise
-additive_noise = 0.05*randn(N_dark_times) # 0.025
+additive_noise = 0.05*randn(N_dark_times) 
 noisy_data .+= additive_noise
 
 # Physically, noisy data of population must be a probability.
@@ -79,7 +79,7 @@ global sample_number
 	 # Priori distribution
 	#σ ~ Normal(0.0,0.5)
 	σ ~ InverseGamma()
-    _freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)
+    _freq ~ truncated(Normal(4.1,5e-4),4.1-1e-3,4.1+1e-3)
     _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
 
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
@@ -105,8 +105,9 @@ sample_number = 0
 chain_size = 35000
 @time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
 BurnIn = 5000
-#@time chain_gmh = sample(model, Gibbs(MH()),5000)
-display(plot(chain[BurnIn+1:end]))
+fig_chain = plot(chain[BurnIn+1:end]);
+xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);
+display(fig_chain)
 display(chain[BurnIn+1:end])
 
 
