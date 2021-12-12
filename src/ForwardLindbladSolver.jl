@@ -1,5 +1,5 @@
 """
-    exponential_solver_complex(rho_vec0,L,t_span::Array{Float64};initial_type = "density"):
+    exponential_solver(rho_u0,rho_v0,LK,LS,LD,t_span,N=0;initial_type = "density")
 # Purpose:
 - use an exponential integrator to integrate
 
@@ -73,7 +73,7 @@ function exponential_solver_complex(rho_vec0,L,t_span::Array{Float64};initial_ty
     return rho_vec
 end
 """
-    exponential_solver(rho_vec0,L,t_span::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}};
+    exponential_solver_complex(rho_vec0,L,t_span::StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}};
                        initial_type = "density")
 
 # Argument:
@@ -131,9 +131,9 @@ function LindbladODEProblemComplex(rho0,L::Array{ComplexF64,2},time_final::Float
 end
 
 """
-    LindbladODEProblem(rho_u0,L::Array{ComplexF64,2},time_final::Float64;initial_type = "density")
+    LindbladODEProblem(rho_u0,rho_v0,LK::Array{Float64,2},LS::Array{Float64},LD::Array{Float64,2},time_final::Float64;initial_type = "density")
 
-Function provide interfaces to DifferentialEquations
+Function provides interfaces to DifferentialEquations
 package to solve the real-valued Lindblad system:
 ``(\\rho_u - i \\rho_v)_t = -i (L_K+iL_S)(\\rho_u-i \\rho_v) + L_D(\\rho_u-i \\rho_v)``
 

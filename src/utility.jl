@@ -40,12 +40,12 @@ function get_population_UQ_vector(rho_vec)
     return P
 end
 """
-	get_population(rho_vec_history::Array{Float64,2})
+	get_population(RhoRealHistory::Array{Float64,2})
 
 # Argument:
-- rho_u_history: time history for the vectorized density matrix, j-th column corresponding to the j-th time point
+- RhoRealHistory: time history for the real part of the density matrix (saved as a flattened vector), j-th column corresponding to the j-th time point
 
-rho_history = rho_u_history - i rho_v_history.
+rho_history = rhou_history - i rhov_history.
 
 Since the density matrix should be Hermitian, it is good enough to just have the
 real part.
@@ -55,6 +55,7 @@ real part.
 to time point i and state j
 """
 function get_population(rho_u_history::Array{Float64,2})
+	# rho_u_history is RhoRealHistory
 	N,nt = size(rho_u_history)
 	N = Int64(sqrt(N))
     return transpose(rho_u_history[1:N+1:end,:])
@@ -73,10 +74,10 @@ function get_population_UQ_matrix(rho_u_history)
 end
 
 """
-	get_population(rho_vec_history::Array{ComplexF64,2})
+	get_population(RhoVecHistory::Array{ComplexF64,2})
 
 # Argument:
-- rho_vec_history, time history for the vectorized density matrix,
+- RhoVecHistory, time history for the vectorized density matrix,
 i-th column corresponding to the i-th time point
 # Output:
 - The population history P which is a 2D array, P[i,j] is corresponding
