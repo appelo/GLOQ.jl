@@ -2,13 +2,15 @@ using LinearAlgebra
 using Zygote,ReverseDiff
 using Turing, Distributions, DifferentialEquations
 # Import MCMCChain, Plots, and StatsPlots for visualizations and diagnostics.
-using MCMCChains, Plots, StatsPlots
+using MCMCChains, Plots
+using StatsPlots
 using CSV,DataFrames
 # Set a seed for reproducibility.
 using Random
 Random.seed!(14);
 using Plots
 include("../src/GLOQ.jl")
+#using GLOQ
 pyplot()
 
 # System parameters for a simple two level open quantum system
@@ -22,9 +24,9 @@ TC = 2.5*17.0 # total control time
 
 # Initial state
 initial_state = 0
-rho_u0 = [0.0;0.0]
-rho_v0 = [0.0;0.0]
-rho_u0[initial_state+1] = 1.0
+state_u0 = [0.0;0.0]
+state_v0 = [0.0;0.0]
+state_u0[initial_state+1] = 1.0
 
 # Duration of the Ramsey experiment, largest dark time
 T_Ramsey = 5.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
@@ -34,7 +36,7 @@ t_dark_times = collect(range(0.0, T_Ramsey, length=N_dark_times))
 
 # Forward solve to generate synthetic data
 rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
-				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
+				 state_u0,state_v0, # initial values, u for the real part, v for the imaginary part
 			     omegas,omr, # transition frequencies, drive frequency
 				 gamma1,gamma2, # decay and dephasing parameters ?
 				 initial_state, # initial state
@@ -83,7 +85,7 @@ global sample_number
     _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
 
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
-					 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
+					 state_u0,state_v0, # initial values, u for the real part, v for the imaginary part
 				     2.0*pi*[_freq],omr, # transition frequencies, drive frequency
 					 gamma1,[_gamma2], # decay and dephasing parameters ?
 					 initial_state, # initial state
@@ -121,7 +123,7 @@ chain_data = DataFrame(chain[BurnIn+1:end])
 freq_mean = mean(chain_data._freq)
 gamma2_mean = mean(chain_data._gamma2)
 rho_chain_mean_u,rho_chain_mean_v = GLOQ.RamseyForwardSolve(
-				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
+				 state_u0,state_v0, # initial values, u for the real part, v for the imaginary part
 				 2.0*pi*[freq_mean],omr, # transition frequencies, drive frequency
 				 gamma1,[gamma2_mean], # decay and dephasing parameters ?
 				 initial_state, # initial state
@@ -154,7 +156,7 @@ for i = 1:1000
     freq_sample = chain_data._freq[sample_ind]
     gamma2_sample = chain_data._gamma2[sample_ind]
     rho_sample_u,rho_sample_v = GLOQ.RamseyForwardSolve(
-				 rho_u0,rho_v0, # initial values, u for the real part, v for the imaginary part
+				 state_u0,state_v0, # initial values, u for the real part, v for the imaginary part
 				 2.0*pi*[freq_sample],omr, # transition frequencies, drive frequency
 				 gamma1,[gamma2_sample], # decay and dephasing parameters ?
 				 initial_state, # initial state

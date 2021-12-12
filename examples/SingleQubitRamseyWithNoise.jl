@@ -1,7 +1,9 @@
 using GLOQ, Zygote, LinearAlgebra
 using GalacticOptim,NLopt,Optim
+using Random
 using Plots
 pyplot()
+Random.seed!(14);
 
 # System parameters for a simple two level open quantum system
 N_states = 2; # number of states
@@ -33,8 +35,27 @@ rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 				 TC,t_dark_times,N_states) # control time, dark time, total number of states
 population_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
 
+# Add noise to the synthetic data
+noisy_data = copy(population_synthetic)
+additive_noise = 0.025*randn(N_dark_times) 
+noisy_data .+= additive_noise
+
+# Physically, noisy data of population must be a probability.
+# Shift and rescale the data so it is between [0,1]
+for j = 1:N_states
+	shift = minimum(noisy_data[:,j])
+	if(shift<0.0)
+		noisy_data[:,j] .-= shift
+	end
+end
+
+for i = 1:N_dark_times
+	noisy_data[i,:] ./= sum(noisy_data[i,:])
+end
+
 # Plot the synthetic data
 fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic)
+scatter!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data)
 display(fig)
 
 # Define the loss function for the GalacticOptim
@@ -50,7 +71,7 @@ function loss(p,dummy_parameter)
 					 TC,t_dark_times,N_states)
 	_population_ramsey = GLOQ.get_population(_rho_ramsey_u)
 
-	_loss = sum(abs2,_population_ramsey-population_synthetic)/N_dark_times
+	_loss = sum(abs2,_population_ramsey-noisy_data)/N_dark_times
 	return _loss
 end
 
@@ -61,7 +82,7 @@ plot_callback = function(p,other_args)
 					 initial_state, # initial state
 					 TC,t_dark_times,N_states)
 	population_ramsey = GLOQ.get_population(rho_ramsey_u)
-	fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic,label=["Syn-0" "Syn-1"],
+	fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,label=["Noisy-0" "Noisy-1"],
 			 line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5)  )
 	plot!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_ramsey,label=["Opt-0" "Opt-1"]
 		 )			#,line = (:dot, 4), marker = ([:hex :hex], 5, 0.1))

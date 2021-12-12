@@ -5,8 +5,6 @@ using GalacticOptim,NLopt,Optim
 using Plots
 using GLOQ
 pyplot()
-using Random
-Random.seed!(14);
 
 # System parameters for a simple two level open quantum system
 N_states = 2; # number of states
@@ -41,6 +39,24 @@ rho_synthetic_ramsey_u,rho_synthetic_ramsey_v = GLOQ.RamseyForwardSolve(
 				 TC,t_dark_ramsey,N_states) # control time, dark time, total number of states
 population_ramsey_synthetic = GLOQ.get_population(rho_synthetic_ramsey_u)
 
+# Add noise to the synthetic Echo data
+noisy_ramsey = copy(population_ramsey_synthetic)
+additive_noise_ramsey = 0.025*randn(N_dark_ramsey) 
+noisy_ramsey .+= additive_noise_ramsey
+
+# Physically, noisy data of population must be a probability.
+# Shift and rescale the data so it is between [0,1]
+for j = 1:N_states
+	shift = minimum(noisy_ramsey[:,j])
+	if(shift<0.0)
+		noisy_ramsey[:,j] .-= shift
+	end
+end
+
+for i = 1:N_dark_ramsey
+	noisy_ramsey[i,:] ./= sum(noisy_ramsey[i,:])
+end
+
 # Echo experiment
 # Duration of the Echo experiment, largest dark time
 T_Echo = 30.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
@@ -56,6 +72,24 @@ rho_synthetic_echo_u,rho_synthetic_echo_v = GLOQ.EchoForwardSolve(
 				 initial_state, # initial state
 				 TC,t_dark_echo,N_states) # control time, dark time, total number of states
 population_echo_synthetic = GLOQ.get_population(rho_synthetic_echo_u)
+
+# Add noise to the synthetic Echo data
+noisy_echo = copy(population_echo_synthetic)
+additive_noise_echo = 0.025*randn(N_dark_echo) 
+noisy_echo .+= additive_noise_echo
+
+# Physically, noisy data of population must be a probability.
+# Shift and rescale the data so it is between [0,1]
+for j = 1:N_states
+	shift = minimum(noisy_echo[:,j])
+	if(shift<0.0)
+		noisy_echo[:,j] .-= shift
+	end
+end
+
+for i = 1:N_dark_echo
+	noisy_echo[i,:] ./= sum(noisy_echo[i,:])
+end
 
 # T1
 # Duration of the T1-decay experiment, largest dark time
@@ -73,10 +107,25 @@ rho_synthetic_t1_u,rho_synthetic_t1_v = GLOQ.T1ForwardSolve(
 				 TC,t_dark_t1,N_states) # control time, dark time, total number of states
 population_t1_synthetic = GLOQ.get_population(rho_synthetic_t1_u)
 
+# Add noise to the synthetic T1 data
+noisy_t1 = copy(population_t1_synthetic)
+additive_noise_t1 = 0.025*randn(N_dark_t1) 
+noisy_t1 .+= additive_noise_t1
 
-# Plot the synthetic data
-#fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic)
-#display(fig)
+# Physically, noisy data of population must be a probability.
+# Shift and rescale the data so it is between [0,1]
+for j = 1:N_states
+	shift = minimum(noisy_t1[:,j])
+	if(shift<0.0)
+		noisy_t1[:,j] .-= shift
+	end
+end
+
+for i = 1:N_dark_t1
+	noisy_t1[i,:] ./= sum(noisy_t1[i,:])
+end
+
+
 
 # Define the loss function for the GalacticOptim
 # p: phyiscal parameters:
@@ -107,9 +156,9 @@ function loss(p,dummy_parameter)
 					 TC,t_dark_t1,N_states)
 	_population_t1 = GLOQ.get_population(_rho_t1_u)
 
-	_loss = sum(abs2,_population_ramsey-population_ramsey_synthetic)*dt_ramsey+
-			sum(abs2,_population_echo-population_echo_synthetic)*dt_echo+
-			sum(abs2,_population_t1-population_t1_synthetic)*dt_t1
+	_loss = sum(abs2,_population_ramsey-noisy_ramsey)*dt_ramsey+
+			sum(abs2,_population_echo-noisy_echo)*dt_echo+
+			sum(abs2,_population_t1-noisy_t1)*dt_t1
 		
 	return _loss
 end
@@ -140,17 +189,17 @@ plot_callback = function(p,other_args)
 
 	# Plot
 	# Ramsey
-	fig_ramsey = plot(t_dark_ramsey./GLOQ.GLOQ_MICRO_SEC,population_ramsey_synthetic,label=["Syn-0" "Syn-1"],
+	fig_ramsey = plot(t_dark_ramsey./GLOQ.GLOQ_MICRO_SEC,noisy_ramsey,label=["Noisy-0" "Noisy-1"],
 			          line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5),legend=:outerright,
 					  title="Ramsey");
-	plot!(fig_ramsey,t_dark_ramsey./GLOQ.GLOQ_MICRO_SEC,population_ramsey,label=["Opt-0" "Opt-1"],legend=:outerright);
+	plot!(fig_ramsey,t_dark_ramsey./GLOQ.GLOQ_MICRO_SEC,population_ramsey,label=["Noisy-0" "Opt-1"],legend=:outerright);
 	# Echo
-	fig_echo = plot(t_dark_echo./GLOQ.GLOQ_MICRO_SEC,population_echo_synthetic,label=["Syn-0" "Syn-1"],
+	fig_echo = plot(t_dark_echo./GLOQ.GLOQ_MICRO_SEC,noisy_echo,label=["Noisy-0" "Noisy-1"],
 		  		     line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5),legend=:outerright,
 					 title="Echo");
 	plot!(fig_echo,t_dark_echo./GLOQ.GLOQ_MICRO_SEC,population_echo,label=["Opt-0" "Opt-1"],legend=:outerright);		
 	# T1
-	fig_t1=plot(t_dark_t1./GLOQ.GLOQ_MICRO_SEC,population_t1_synthetic,label=["Syn-0" "Syn-1"],
+	fig_t1=plot(t_dark_t1./GLOQ.GLOQ_MICRO_SEC,noisy_t1,label=["Noisy-0" "Noisy-1"],
 			    line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5),legend=:outerright,
 				title="T1");
 	plot!(fig_t1,t_dark_t1./GLOQ.GLOQ_MICRO_SEC,population_t1,label=["Opt-0" "Opt-1"],legend=:outerright);
