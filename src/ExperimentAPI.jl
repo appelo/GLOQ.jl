@@ -37,8 +37,8 @@ end
 - gamma2: determine the dephasing operator in the Lindblad system
 
 # Output:
-- L_decay: L_decay[i][i+1] = sqrt(gamma1[i]), and zeros everywhere else
-- L_dephase: Diagonal{0,sqrt(gamma2[1]),...)
+- Ldecay: Ldecay[i][i+1] = sqrt(gamma1[i]), and zeros everywhere else
+- Ldephase: Diagonal{0,sqrt(gamma2[1]),...)
 """
 function RotationFrameLindblad(gamma1::Array{Float64},gamma2::Array{Float64})
 	#L_decay = Bidiagonal(zeros(length(gamma1)+1),sqrt.(gamma1),:U)
@@ -109,33 +109,37 @@ function RotationFrameRamseyControl(N::Int64)
 end
 
 """
-function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
+	RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 						  omega::Array{Float64},omega_drive::Float64,
 						  gamma1::Array{Float64},gamma2::Array{Float64},
 						  InitialState::Int64,
-						  TC::Float64,t_dark_times::Array{Float64},
-						  N_states::Int64=0;
-						  initial_type="states",
-						  method="exponential",
-						  DiffEqKwargs...)
+						  TC::Float64,tdark_times::Array{Float64},
+					   	  N_states::Int64=0;
+					      initial_type="states",
+					   	  method="exponential",
+					      DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
-- gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
-- TC: control time of the control signal
-- t_dark_times: the dark time in the Ramsey experiment
-- N_states: number of states
+- gamma1: the decay parameter  of the Lindblad operators, equal to ``1/T_1`` with ``T_1`` being the relaxation time
+- gamma2: the dephasing parameter  of the Lindblad operators, equal to ``1/T_2`` with ``T_2`` being the dephasing time
 - InitialState: initial state of the density matrix
+- TC: control time of the control signal
+- tdark_times: the dark time in the Ramsey experiment
+- N_states: number of states. If it is not specified, the default value will be 0, and the code will automatically detect how many states are considered.  
+- initial_type: type of the initial condition
+  1. initial values are state vectors (default choice)
+  2. initial values are density matrices saving in flattened vectors
 - method: method to solve the Lindblad system
- 1. "exponential": exponential time integrator
+ 1. "exponential": exponential time integrator (default choice)
  2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
- 3. Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 3. Other solvers available in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Output:
-- rho_ramsey_u,rho_ramsey_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- ``\\rho_u,\\rho_v``: real and imaginary part of the density matrix ``\\rho=\\rho_u-i\\rho_v`` at sampled dark times, and they are saved as flattened vectors
 """
 function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   		  omega::Array{Float64},omega_drive::Float64,
@@ -393,31 +397,36 @@ end
 					   charge_noise::Array{Float64},
 					   gamma1::Array{Float64},gamma2::Array{Float64},
 					   InitalState::Int64,
-					   TC::Float64,t_dark_times::Array{Float64},
-					   N_states::Int64=0;initial_type="states")
+					   TC::Float64,tdark_times::Array{Float64},
+					   N_states::Int64=0;
+					   initial_type="states",
+					   method="exponential",
+					   DiffEqKwargs...)
 
 # Argument:
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
-- charge_noise: charge noise
-- gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
-- InitialState: initial state of the density matrix
+- gamma1: the decay parameter  of the Lindblad operators, equal to ``1/T_1`` with ``T_1`` being the relaxation time
+- gamma2: the dephasing parameter  of the Lindblad operators, equal to ``1/T_2`` with ``T_2`` being the dephasing time
+- Initial State: initial state of the density matrix
 - TC: control time of the control signal
-- t_dark_times: the dark time in the Ramsey experiment
-- N_states: number of states
-- InitialState: initial state of the density matrix
-- method: method to solve the Lindblad system
- 1. "exponential": exponential time integrator
+- dark_times: the dark time in the Ramsey experiment
+- N_states: number of states. If it is not specified, the default value will be 0, and the code will automatically detect how many states are considered.  
+- initial_type: type of the initial condition
+  1. initial values are state vectors (default choice)
+  2. initial values are density matrices saving in flattened vectors
+- method: method to solve the Landlady system
+ 1. "exponential": exponential time integrator (default choice)
  2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
- 3. Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 3. Other solvers available in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Parity event
 - Transition frequency will take equal probability to be omega``\\pm``0.5``\\times``charge_noise
 
 # Output:
-- rho_ramsey_u,rho_ramsey_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- ``\\rho_u,\\rho_v``: real and imaginary part of the density matrix ``\\rho=\\rho_u-i\\rho_v`` at sampled dark times, and they are saved as flattened vectors
 """
 function RamseyParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   		  omega::Array{Float64},omega_drive::Float64,
@@ -456,7 +465,7 @@ end
 					   omega::Array{Float64},omega_drive::Float64,
 					   gamma1::Array{Float64},gamma2::Array{Float64},
 					   InitialState::Int64,
-					   TC::Float64,t_dark_times::Array{Float64},
+					   TC::Float64,tdark_times::Array{Float64},
 					   N_states::Int64=0;
 					   initial_type="states",
 					   method="exponential",
@@ -466,16 +475,23 @@ end
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
-- gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
-- TC: control time of the control signal
-- t_dark_times: the dark time in the Ramsey experiment
-- N_states: number of states
+- gamma1: the decay parameter  of the Lindblad operators, equal to ``1/T_1`` with ``T_1`` being the relaxation time
+- gamma2: the dephasing parameter  of the Lindblad operators, equal to ``1/T_2`` with ``T_2`` being the dephasing time
 - InitialState: initial state of the density matrix
+- TC: control time of the control signal
+- tdark_times: the dark time in the Ramsey experiment
+- N_states: number of states. If it is not specified, thedefault value will be 0, and the code will automatically detect how many states are considered.  
+- initial_type: type of the initial condition
+  1. initial values are state vectors (default choice)
+  2. initial values are density matrices saving in flattened vectors
 - method: method to solve the Lindblad system
- 1. "exponential": exponential time integrator
+ 1. "exponential": exponential time integrator (default choice)
  2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
- 3. Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 3. Other solvers available in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
+
+# Output:
+- ``\\rho_u,\\rho_v``: real and imaginary part of the density matrix ``\\rho=\\rho_u-i\\rho_v`` at sampled dark times, and they are saved as flattened vectors
 """
 function EchoForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   omega::Array{Float64},omega_drive::Float64,
@@ -638,7 +654,7 @@ end
 					   charge_noise::Array{Float64},
 					   gamma1::Array{Float64},gamma2::Array{Float64},
 					   InitialState::Int64,
-					   TC::Float64,t_dark_times::Array{Float64},
+					   TC::Float64,tdark_times::Array{Float64},
 					   N_states::Int64=0;
 					   initial_type="states",
 					   method="exponential",
@@ -648,24 +664,26 @@ end
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
-- charge_noise: charge noise
-- gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
+- gamma1: the decay parameter  of the Lindblad operators, equal to ``1/T_1`` with ``T_1`` being the relaxation time
+- gamma2: the dephasing parameter  of the Lindblad operators, equal to ``1/T_2`` with ``T_2`` being the dephasing time
 - InitialState: initial state of the density matrix
 - TC: control time of the control signal
-- t_dark_times: the dark time in the Ramsey experiment
-- N_states: number of states
-- InitialState: initial state of the density matrix
+- tdark_times: the dark time in the Ramsey experiment
+- N_states: number of states. If it is not specified, the default value will be 0, and the code will automatically detect how many states are considered.  
+- initial_type: type of the initial condition
+  1. initial values are state vectors (default choice)
+  2. initial values are density matrices saving in flattened vectors
 - method: method to solve the Lindblad system
-	- "exponential": exponential time integrator
-	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
-	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 1. "exponential": exponential time integrator (default choice)
+ 2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
+ 3. Other solvers available in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Parity event
 - Transition frequency will take equal probability to be omega``\\pm``0.5``\\times``charge_noise
 
 # Output:
-- rho_echo_u,rho_echo_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- ``\\rho_u,\\rho_v``: real and imaginary part of the density matrix ``\\rho=\\rho_u-i\\rho_v`` at sampled dark times, and they are saved as flattened vectors
 """
 function EchoParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   omega::Array{Float64},omega_drive::Float64,
@@ -704,7 +722,7 @@ end
 					   omega::Array{Float64},omega_drive::Float64,
 					   gamma1::Array{Float64},gamma2::Array{Float64},
 					   InitialState::Int64,
-					   TC::Float64,t_dark_times::Array{Float64},
+					   TC::Float64,tdark_times::Array{Float64},
 					   N_states::Int64=0;
 					   initial_type="states",
 					   method="exponential",
@@ -714,15 +732,23 @@ end
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
-- charge_noise: charge noise
-- gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
+- gamma1: the decay parameter  of the Lindblad operators, equal to ``1/T_1`` with ``T_1`` being the relaxation time
+- gamma2: the dephasing parameter  of the Lindblad operators, equal to ``1/T_2`` with ``T_2`` being the dephasing time
 - InitialState: initial state of the density matrix
 - TC: control time of the control signal
-- t_dark_times: the dark time in the Ramsey experiment
-- N_states: number of states
+- tdark_times: the dark time in the Ramsey experiment
+- N_states: number of states. If it is not specified, the default value will be 0, and the code will automatically detect how many states are considered.  
+- initial_type: type of the initial condition
+  1. initial values are state vectors (default choice)
+  2. initial values are density matrices saving in flattened vectors
+- method: method to solve the Lindblad system
+ 1. "exponential": exponential time integrator (default choice)
+ 2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
+ 3. Other solvers available in DifferentialEquations.jl, for example, method = Trapezoid()
+- DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Output:
-- rho_echo_u,rho_echo_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- ``\\rho_u,\\rho_v``: real and imaginary part of the density matrix ``\\rho=\\rho_u-i\\rho_v`` at sampled dark times, and they are saved as flattened vectors
 """
 function T1ForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   omega::Array{Float64},omega_drive::Float64,
@@ -834,7 +860,7 @@ end
 					   charge_noise::Array{Float64},
 					   gamma1::Array{Float64},gamma2::Array{Float64},
 					   InitialState::Int64,
-					   TC::Float64,t_dark_times::Array{Float64},
+					   TC::Float64,tdark_times::Array{Float64},
 					   N_states::Int64=0;
 					   initial_type="states",
 					   method="exponential",
@@ -844,24 +870,26 @@ end
 - rho_u0,rho_v0: initial states ``\\rho_{u_0}-i\\rho_{v_0}``
 - omega: transition frequencies
 - omega_drive: driving frequency
-- charge_noise: charge noise
-- gamma1,gamma2: determine the decay part and the dephasing part of the Lindblad operators
+- gamma1: the decay parameter  of the Lindblad operators, equal to ``1/T_1`` with ``T_1`` being the relaxation time
+- gamma2: the dephasing parameter  of the Lindblad operators, equal to ``1/T_2`` with ``T_2`` being the dephasing time
 - InitialState: initial state of the density matrix
 - TC: control time of the control signal
-- t_dark_times: the dark time in the Ramsey experiment
-- N_states: number of states
-- InitialState: initial state of the density matrix
+- tdark_times: the dark time in the Ramsey experiment
+- N_states: number of states. If it is not specified, the default value will be 0, and the code will automatically detect how many states are considered.  
+- initial_type: type of the initial condition
+  1. initial values are state vectors (default choice)
+  2. initial values are density matrices saving in flattened vectors
 - method: method to solve the Lindblad system
-	- "exponential": exponential time integrator
-	- "DiffEqDefault": a default choice made by DifferentialEquations.jl
-	- Other solvers availabe in DifferentialEquations.jl, for example, method = Trapezoid()
+ 1. "exponential": exponential time integrator (default choice)
+ 2. "DiffEqDefault": a default choice made by DifferentialEquations.jl
+ 3. Other solvers available in DifferentialEquations.jl, for example, method = Trapezoid()
 - DiffEqKwargs: keyword arguments feed to the ``solve function" of DifferentialEquations.jl
 
 # Parity event
 - Transition frequency will take equal probability to be omega``\\pm``0.5``\\times``charge_noise
 
 # Output:
-- rho_echo_u,rho_echo_v: density matrix at dark times, with ``\\rho=\\rho_u-i\\rho_v``
+- ``\\rho_u,\\rho_v``: real and imaginary part of the density matrix ``\\rho=\\rho_u-i\\rho_v`` at sampled dark times, and they are saved as flattened vectors
 """
 function T1ParityForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 				   omega::Array{Float64},omega_drive::Float64,

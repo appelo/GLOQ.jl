@@ -10,7 +10,9 @@ makedocs(
     authors = "Daniel Appelo <appeloda@msu.edu> and contributors.",
     pages = [
         "Home" => "index.md",
-        "Model" => "model.md",
+        "Model" => Any["Lindblad equation"=>"model.md",
+                       "Experiments"=>"experiment.md" 
+                      ],
         "Workflow and examples" => 
             Any["Workflow"=>"workflow.md",
                 "Example 1" => "example1.md",

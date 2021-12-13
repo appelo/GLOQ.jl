@@ -1,16 +1,32 @@
-The work flow for solving a quantum characterization problem consists of the following general steps:
-1. Setup
-2. Optimize
+The GLOQ.jl package aims at solving quantum characterization problems with deterministic optimization or Bayesian inference methods. 
 
-## 1. Setup
+
+The general work flow for solving a quantum characterization problem consists of the following general steps:
+1. Setup the characterization problem.
+2. Perform optimization/Bayesian inference.
+
+## Deterministic optimization
+### 1. Setup
 The setup phase includes specifying
 - Load the experimental/synthetic data
 - Specify the known parameters
 - Number of the states
-- Set up initial guess and the bounds for target parameters
-- Create the loss (objective) function by fitting the data set with forward solves
-- Optional: compute/approximate the Jacobian of the loss function. By default, auto-differentiation (Zygote.jl) or finite-difference approxiamtion will be used.
 
-## 2. Optimization
+
+### 2. Optimization
+- Set up initial guess and the bounds for target parameters
+- Create the objective function by fitting the data set with forward solves
+- Optional: compute/approximate the Jacobian of the loss function. By default, auto-differentiation (Zygote.jl) or finite-difference approximation will be used.
 - Feed the loss function and its Jacobian to the interface of optimization package.
 
+## Bayesian inference with Turing.jl
+### 1. Setup
+The setup phase includes specifying
+- Load the experimental/synthetic data
+- Specify the known parameters
+- Number of the states
+
+
+### 2. Bayesian inference with [Turing.jl](https://turing.ml/stable/)
+- Use `@model` interface of `Turing.jl` to define a `model` object fitting the data based on some random parameter values sampled from some priori and proposal distributions.
+- Feed the `model` object to the interface of a Markov Chain Monte-Carlo (MCMC) sampler.

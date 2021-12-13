@@ -1,12 +1,12 @@
 # Lindblad equation
-We consider the $N$ energy level Lindblad equation:
+The governing equation of an open quantum system is the Lindblad equation. We consider the $N$ energy level Lindblad equation:
 ```math
 \begin{equation}
 \dot{\rho} = -i\left(H\rho - \rho H\right) + \sum_{j=1}^2 \left( {\cal L}_{j} \rho {\cal L}_{j}^\dagger -
 \frac{1}{2}\left( {\cal L}_{j}^\dagger{\cal L}_{j}\rho + \rho{\cal L}_{j}^\dagger{\cal L}_{j} \right) \right).
 \end{equation}
 ```
-Here, $\rho(t)$ is the density matrix, $H(t)$ is a Hamiltonain operator, and operators ${\cal L}_{1}$ and ${\cal L}_{2}$ model the decay and dephasing mechanisim.
+Here, $\rho(t)$ is the density matrix, $H(t)$ is a Hamiltonian operator, and operators ${\cal L}_{1}$ and ${\cal L}_{2}$ model the decay and dephasing mechanism.
 
 By default, the Hamiltonian is in the form of $H(t)=H_{\rm 0}+H_c(t)$, where
 ```math
@@ -48,7 +48,7 @@ The thermal relaxation time for energy level $k$ is $T_{1,k}=1/\gamma_{1,k}$,
 and the  dephasing time for energy level $k$ is $T_{2,k}=1/\gamma_{2,k}$.
 
 ## Lindblad equation with charge noise
-We also consider the Lindblad model with noise. The system Hamiltonian is
+We also consider the Lindblad model with charge noise. In this case, the system Hamiltonian is
 ```math
 H_{\rm 0} = \left[
 \begin{array}{cccc}
