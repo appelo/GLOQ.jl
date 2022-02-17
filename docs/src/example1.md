@@ -1,9 +1,12 @@
-
 ## Example 1: characterization of a single qubit Ramsey experiment 
-In this example, we solve a single qubit characterization problem based on the synthetic data of a [Ramsey experiment](experiment.md). We the transition frequency $\omega_{01}$ and seek the dephasing time $T_2=1/\gamma_2$. We first consider a synthetic data set without noise.
-The code can be ran by `cd("examples");include("SingleQubitRamsey.jl")`. 
+In this example, we characterize a single qubit usnig synthetic data of a [Ramsey experiment](experiment.md). Specifically, we  find the transition frequency $\omega_{01}$ and the dephasing time $T_2=1/\gamma_2$.
+
+We first consider a synthetic data set without noise.
+The code can be executed by issuing the commands (from the root `GLOQ.jl` directory) `cd("examples");include("SingleQubitRamsey.jl")`. The code snippets below are from that file. 
+
 ### Step 1: generate the synthetic data
-We first set up the system parameters. The number of states is `N_states=2` for the single qubit. `freqs, gamma1, gamma2` are vectors saving the transition frequencies, the reciprocal of relaxation time and the reciprocal of dephasing time. The unit for these parameters are `GHz`.
+We first set up the system parameters. The number of states is `N_states=2` for the single qubit. `freqs, gamma1, gamma2` are vectors holding the transition frequency, the reciprocal of the relaxation time and the reciprocal of the dephasing time. The unit for these parameters are `GHz`.
+
 ```julia
 # System parameters for a simple two level open quantum system
 N_states = 2; # number of states
@@ -26,7 +29,7 @@ state_u0 = [0.0;0.0]
 state_v0 = [0.0;0.0]
 state_u0[initial_state+1] = 1.0
 ```
-The duration of the Ramsey experiment is 40.0 $\mu s$, and 401 dark times are uniformly sampled.
+The duration of the Ramsey experiment is 40.0 $\mu s$, is discretized into 401 equidistant dark times.
 ```julia
 # Duration of the Ramsey experiment, largest dark time given in Microseconds
 T_Ramsey = 40.0*GLOQ.GLOQ_MICRO_SEC # convert micro-sec to nano-sec
@@ -160,7 +163,7 @@ Error: [-0.0009999999999994458, -1.5395670849294163e-17]
 - Opt-1: optimized result for the energy level 1.
 
 ### The same procedure can be applied to characterize the single qubit with noisy synthetic data of a Ramsey experiment.
-Check `examples/SingleQubitRamseyWithNoise.jl` for more details. And the corresponding results are as follows.
+Check `examples/SingleQubitRamseyWithNoise.jl` for more details. The corresponding results are as follow.
 ```
 Optimized results: [4.0999999983533915, 7.229921553726332e-5]
 Loss: 0.0015030181815031656

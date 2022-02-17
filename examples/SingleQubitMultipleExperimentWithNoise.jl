@@ -1,10 +1,8 @@
 using Zygote
 using LinearAlgebra
-#using DifferentialEquations#,DiffEqFlux
 using GalacticOptim,NLopt,Optim
 using Plots
 using GLOQ
-pyplot()
 
 # System parameters for a simple two level open quantum system
 N_states = 2; # number of states
