@@ -1,10 +1,9 @@
 using Zygote
 using LinearAlgebra
-#using DifferentialEquations#,DiffEqFlux
 using GalacticOptim,NLopt,Optim
 using Plots
 using GLOQ
-pyplot()
+
 using Random
 Random.seed!(14);
 

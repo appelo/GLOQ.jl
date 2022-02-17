@@ -2,7 +2,6 @@ module GLOQ
 
 using LinearAlgebra
 using DifferentialEquations
-#using Zygote
 
 export about
 # Write your package code here.

@@ -1,4 +1,6 @@
-# Lindblad equation
+# Models
+
+## Lindblad equation
 The governing equation of an open quantum system is the Lindblad equation. We consider the $N$ energy level Lindblad equation:
 ```math
 \begin{equation}
@@ -6,9 +8,9 @@ The governing equation of an open quantum system is the Lindblad equation. We co
 \frac{1}{2}\left( {\cal L}_{j}^\dagger{\cal L}_{j}\rho + \rho{\cal L}_{j}^\dagger{\cal L}_{j} \right) \right).
 \end{equation}
 ```
-Here, $\rho(t)$ is the density matrix, $H(t)$ is a Hamiltonian operator, and operators ${\cal L}_{1}$ and ${\cal L}_{2}$ model the decay and dephasing mechanism.
+Here, $\rho(t)$ is the density matrix, $H(t)$ is a Hamiltonian operator, and operators ${\cal L}_{1}$ and ${\cal L}_{2}$ model the decay and dephasing.
 
-By default, the Hamiltonian is in the form of $H(t)=H_{\rm 0}+H_c(t)$, where
+We assume that the Hamiltonian is in the form of $H(t)=H_{\rm 0}+H_c(t)$, where
 ```math
 H_{\rm 0} = \left[
 \begin{array}{cccc}

@@ -1,3 +1,4 @@
+using GLOQ
 using LinearAlgebra
 using Zygote,ReverseDiff
 using Turing, Distributions, DifferentialEquations
@@ -9,9 +10,9 @@ using CSV,DataFrames
 using Random
 Random.seed!(14);
 using Plots
-include("../src/GLOQ.jl")
-#using GLOQ
-pyplot()
+
+
+
 
 # System parameters for a simple two level open quantum system
 N_states = 2; # number of states
@@ -98,7 +99,7 @@ global sample_number
     end
 	global sample_number
 	sample_number += 1
-	println("Sample ",sample_number," done")
+	# println("Sample ",sample_number," done")
 end
 
 model = RamseyExperiment(noisy_data)
@@ -106,6 +107,7 @@ model = RamseyExperiment(noisy_data)
 sample_number = 0
 chain_size = 35000
 @time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
+
 BurnIn = 5000
 fig_chain = plot(chain[BurnIn+1:end]);
 xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);

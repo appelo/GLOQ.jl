@@ -2,7 +2,7 @@ using GLOQ, Zygote, LinearAlgebra
 using GalacticOptim,NLopt,Optim
 using Random
 using Plots
-pyplot()
+
 Random.seed!(14);
 
 # System parameters for a simple two level open quantum system
@@ -130,7 +130,7 @@ println("NLopt LBFGS Optimization starts")
 println("NLopt LBFGS Optimization done")
 
 
-# present the solutions
-println("\nOptimized results: ",sol.u,
+# present the solution
+println("\n\n\n---------------------------\nOptimized results: \n[Transition freq. (GHz), gamma2]\n",sol.u,
         "\nLoss: ",sol.minimum,
-		"\nError: ",sol.u-p_true)
+		"\nError: ",sol.u-p_true,"\n---------------------------\n")

@@ -2,7 +2,7 @@
 ## Example 3: uncertainty quantification for a single qubit based on noisy data of a Ramsey experiment.
 In this example, we apply the Metropolis-Hastings algorithm to do uncertainty quantification for a single qubit based on noisy synthetic data of a Ramsey experiment.
 We provide an interface to the Julia Bayesian inference  package [Turing.jl](https://turing.ml/stable/).
-It can be executed by `cd("examples");include("SingleQubitBayesian.jl")`.
+This example can be executed by `cd("examples");include("SingleQubitBayesian.jl")`.
 
 #### Load the needed packages
 ```julia

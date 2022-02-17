@@ -1,6 +1,6 @@
 ## Example 2: characterization of single qubit Ramsey experiment, Echo experiment and T1-decay experiment.
-In this example, we solve a single qubit characterization problem based on the synthetic data of a  Ramsey experiment, an Echo experiment and a T1-decay experiment. We seek the relaxation time $T_1=1/\gamma_1$, the dephasing time $T_2=1/\gamma_2$ and the transition frequency $\omega_{01}$. We first consider the synthetic data without noise.
-The code can be ran by `cd("examples");include("SingleQubitBayesian.jl")`. 
+In this example, we characterization a single qubit using synthetic data from a  Ramsey experiment, an Echo experiment and a T1-decay experiment. We seek the relaxation time $T_1=1/\gamma_1$, the dephasing time $T_2=1/\gamma_2$ and the transition frequency $\omega_{01}$. We first consider the synthetic data without noise.
+The code can be executed by `cd("examples");include("SingleQubitBayesian.jl")`. 
 
 ### Step 1: generate the synthetic data
 Set up system parameters and the initial state vectors.
@@ -239,7 +239,7 @@ Error: [0.0, -1.3552527156068805e-20, 1.5585406229479126e-19]
 
 
 ### The same procedure can be applied to characterize the single qubit with noisy synthetic data of a Ramsey experiment.
-Check `examples/SingleQubitMultipleExperimentWithNoise.jl` for more details. And the corresponding results are as follows.
+Check `examples/SingleQubitMultipleExperimentWithNoise.jl` for more details. The corresponding results are as follow.
 ```
 Optimized results: [4.10000008455243, 2.263961319781968e-5, 4.846757202378724e-5]
 Loss: 28.043881998133504
