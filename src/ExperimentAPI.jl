@@ -150,7 +150,7 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 						  initial_type="states",
 						  method="exponential",
 						  DiffEqKwargs...)
-    if(N_states==0)
+    if (N_states==0)
 		N_states = length(omega)+1
 	end
 	#################################
@@ -177,7 +177,7 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 	# Step 2: Forward solves
 	#################################
 	# initial conditions
-	if(initial_type == "states")
+	if (initial_type == "states")
 		rho_u_initial = (rho_u0*transpose(rho_u0)+rho_v0*transpose(rho_v0))[:]
 		rho_v_initial = (rho_v0*transpose(rho_u0)-rho_u0*transpose(rho_v0))[:]
 		rho_vec0 = [rho_u_initial;rho_v_initial]
@@ -188,7 +188,7 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 		return
 	end
 	N_dark_times = length(t_dark_times)
-	if(method=="exponential")
+	if (method=="exponential")
 	#if(false)
 		# Ramsey experiment
 		Half_pi_operator = exp(0.5*TC*[LD+LS_half_pi -LK_half_pi; LK_half_pi LD+LS_half_pi])
@@ -266,8 +266,8 @@ function RamseyForwardSolve(rho_u0::Array{Float64},rho_v0::Array{Float64},
 	return rho_ramsey[1:N_states^2,:],rho_ramsey[N_states^2+1:end,:]
 end
 
-# Defined for the compatability of adjoint solves in Turing.jl to hold their data structure
-function RamseyForwardSolve(rho_u0,rho_v0,
+"""
+	RamseyForwardSolve(rho_u0,rho_v0,
 				   		  omega,omega_drive,
 				   		  gamma1,gamma2,
 						  InitialState,
@@ -276,7 +276,21 @@ function RamseyForwardSolve(rho_u0,rho_v0,
 						  initial_type="states",
 						  method="exponential",
 						  DiffEqKwargs...)
-    if(N_states==0)
+
+This function is defined for the compatability of Turing.jl, especially for the case when auto-differentiation (AD) is needed. To support AD with Turing.jl, 
+the matrix exponential is realized through ExponentialAction.jl in this function. For now, we only support the AD with Zygote.jl.
+"""
+# Defined for the compatability of adjoint solves in Turing.jl to hold their data structure
+function RamseyForwardSolveUQ(rho_u0,rho_v0,
+				   		  omega,omega_drive,
+				   		  gamma1,gamma2,
+						  InitialState,
+				   		  TC,t_dark_times,
+				   		  N_states::Int64=0;
+						  initial_type="states",
+						  method="exponential",
+						  DiffEqKwargs...)
+    if (N_states==0)
 		N_states = length(omega)+1
 	end
 	#################################
@@ -314,23 +328,28 @@ function RamseyForwardSolve(rho_u0,rho_v0,
 		return
 	end
 	N_dark_times = length(t_dark_times)
-	if(method=="exponential")
-	#if(false)
-		# Ramsey experiment
-		Half_pi_operator = exp(0.5*TC*[LD+LS_half_pi -LK_half_pi; LK_half_pi LD+LS_half_pi])
+	if (method=="exponential")
+		# Half_pi_operator = exp(0.5*TC*[LD+LS_half_pi -LK_half_pi; LK_half_pi LD+LS_half_pi])
+		III = Matrix(1.0I, length(rho_vec0),length(rho_vec0))
+		Half_pi_operator = expv(0.5*TC,
+								[LD+LS_half_pi -LK_half_pi; LK_half_pi LD+LS_half_pi],
+								III)
 		FreeEvolution = [ LD -LK_free;
-					  	  LK_free  LD]
+				  		 LK_free  LD]
 		# half-pi pusle
 		rho_vec1 = Half_pi_operator*rho_vec0
 		# free propagation for a dark time
-		Free_operator = exp(t_dark_times[1]*FreeEvolution)
-		rho_vec2 = Free_operator*rho_vec1
+		# Free_operator = exp(t_dark_times[1]*FreeEvolution)
+		#Free_operator = expv(t_dark_times[1],FreeEvolution,III)
+		#rho_vec2 = Free_operator*rho_vec1
+		rho_vec2 = expv(t_dark_times[1],FreeEvolution,rho_vec1)
 		# half-pi pulse
 		rho_ramsey = Half_pi_operator*rho_vec2
 		for i = 2:N_dark_times
 			# free propagation for a dark time
-			Free_operator = exp(t_dark_times[i]*FreeEvolution)
-			rho_vec2 = Free_operator*rho_vec1
+			#Free_operator = expv(t_dark_times[i],FreeEvolution,III)
+			#rho_vec2 = Free_operator*rho_vec1
+			rho_vec2 = expv(t_dark_times[i],FreeEvolution,rho_vec1)
 			# half-pi pulse
 			rho_ramsey = [rho_ramsey Half_pi_operator*rho_vec2]
 		end
