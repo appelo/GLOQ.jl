@@ -2,7 +2,7 @@
 ## Example 3: uncertainty quantification for a single qubit based on noisy data of a Ramsey experiment.
 In this example, we apply the Metropolis-Hastings algorithm to do uncertainty quantification for a single qubit based on noisy synthetic data of a Ramsey experiment.
 We provide an interface to the Julia Bayesian inference  package [Turing.jl](https://turing.ml/stable/).
-This example can be executed by `cd("examples");include("SingleQubitBayesian.jl")`.
+It can be executed by `cd("examples");include("SingleQubitBayesian.jl")`.
 
 #### Load the needed packages
 ```julia
@@ -64,7 +64,7 @@ noisy_data .*= multiplicative_noise
 additive_noise = 0.05*randn(N_dark_times) 
 noisy_data .+= additive_noise
 ```
-#### Normalize the noisy data so that it is a population between [0,1].
+#### Normalize the nosiy data so that it is a population between [0,1].
 ```julia
 for j = 1:N_states
 	shift = minimum(noisy_data[:,j])
@@ -86,11 +86,7 @@ scatter!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
 
 p_true = [freqs;gamma1;gamma2]
 ```
-![Example 3: synthetic noisy data](picture/Example3_noisy_data.png)
-#### Set up the auto-differentiation backend for Turing.jl as Zygote. Note that the current implementation only supports Zygote for the AD backend.
-```julia
-Turing.setadbackend(:zygote)
-```
+![Example 3: synthetic noisy data](Example3_noisy_data.png)
 #### Synthetic data with and without noise. Population of different states are presented.
 - Syn-0: synthetic data without noise for the energy level 0;
 - Syn-1: synthetic data without noise for the energy level 1;
@@ -108,11 +104,11 @@ and `_gamma2` is sampled based on a truncated normal distribution.
 Based on the sampled parameters, we apply `GLOQ.RamseyForwardSolve` to perform a forward solve, and the noisy data is assumed to obey 
 a priori distribution, which is a multivariate-normal distribution whose mean is the forward simulation results and its covariance matrix is $\sigma I$.
 ```julia
-global forward_solve_call
+global sample_number
 @model function RamseyExperiment(data)
 	 # Priori distribution
 	σ ~ InverseGamma() # random hyper parameter $\sigma$ obeys an Inverse Gamma distribution.
-	_freq ~ truncated(Normal(4.1,5e-4),4.1-1e-3,4.1+1e-3)
+    _freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)
     _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
 	# Perform a Forward solve with sampled parameters
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
@@ -127,9 +123,9 @@ global forward_solve_call
 	for i = 1:N_dark_times
         data[i,:] ~ MvNormal(_population_ramsey[i,:], σ)
     end
-	global forward_solve_call
-	forward_solve_call += 1
-	println("Forward solve ",forward_solve_call," done")
+	global sample_number
+	sample_number += 1
+	println("Sample ",sample_number," done")
 end
 
 model = RamseyExperiment(noisy_data)
@@ -137,21 +133,21 @@ model = RamseyExperiment(noisy_data)
 #### Step 2b: use Turing.jl's `sample` function to apply the Metropolis-Hastings algorithm.
 
 In the `sample` function, the first argument is the target `model` object, the second argument specifies which sampler is applied, and the 
-third argument is the length of the chain. Here, we use the No-U-Turn sampler.
+third argument is the length of the chain. Here, we use the standard Metropolis-Hastings sampler with a  diagonal covariance matrix.
 ```julia
-forward_solve_call = 0
-chain_size = 3500
-@time chain = sample(model, NUTS(0.65), chain_size)
+sample_number = 0
+chain_size = 35000
+@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
 ```
-Burn-in length is set up as $5000$ to improve the quality of the chain. We present the chain after burn-in.
+Burin-in lenth is set up as $5000$ to improve the quality of the chain. We present the chain after burn-in.
 ```julia
-BurnIn = 1000
+BurnIn = 5000
 fig_chain = plot(chain[BurnIn+1:end]);
 xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);
 display(fig_chain)
 display(chain[BurnIn+1:end])
 ```
-![Example 3: chain](picture/Example3_chain.png)
+![Example 3: chain](Example3_chain.png)
 #### Sampled Markov chain after burn-in and the corresponding posteriori distribution.
 
 ### Step 3: Present the data
@@ -180,7 +176,7 @@ scatter!(fig_mean_vs_noisy,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
 		 label=["Noisy data-0" "Noisy data-1"])
 display(fig_mean_vs_noisy)
 ```
-![Example 3: mean value vs noisy data](picture/Example3_mean_vs_data.png)
+![Example 3: mean value vs noisy data](Example3_mean_vs_data.png)
 #### The Ramsey curve corresponding to the mean value vs data with noise. Mean-0 and Mean-1: the Ramsey curve corresponding to the mean value of the chain for the energy level 0 and 1. Noisy-0 and Noisy-1: noisy data for the energy level 0 and 1.
 
 Compare the results with noise-free data.
@@ -191,7 +187,7 @@ scatter!(fig_mean_vs_syn,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_synthetic,
 		 label=["Syn-0" "Syn-1"])
 display(fig_mean_vs_syn)
 ```
-![Example 3: mean value vs data without noise](picture/Example3_mean_vs_syn.png)
+![Example 3: mean value vs data without noise](Example3_mean_vs_syn.png)
 #### The Ramsey curve corresponding to the mean value vs synthetic data without noise. Mean-0 and Mean-1: the Ramsey curve corresponding to the mean value of the chain for the energy level 0 and 1. Syn-0 and Syn-1: synthetic data without noise for the energy level 0 and 1.
 
 #### Display the difference between the mean value of the chain and the true value
@@ -233,5 +229,5 @@ scatter!(fig_result,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
 	     label=["Noisy data-0" "Noisy data-1"])
 display(fig_result)
 ```
-![Example 3: the Ramsey results corresponding to the posterior distribution and the mean results](picture/Example3_post.png)
+![Example 3: the Ramsey results corresponding to the posterior distribution and the mean results](Example3_post.png)
 #### Compare the Ramsey curves generated by the samples from the chain. Mean-0 and Mean-1: the Ramsey curve corresponding to the mean value of the chain for the energy level 0 and 1. Noisy-0 and Noisy-1: noisy synthetic data for the energy level 0 and 1.
