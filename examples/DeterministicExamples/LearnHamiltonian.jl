@@ -3,7 +3,7 @@ using Plots
 using DifferentialEquations,DiffEqFlux,LinearAlgebra
 using Optim
 using ForwardDiff
-include("../src/GLOQ.jl")
+using GLOQ
 pyplot()
 #import GLOQ
 ############################################################
@@ -60,8 +60,8 @@ noisy_data2 = population2_history+noise_amp.*rand(Float64,size(population2_histo
 noisy_data3 = population3_history+noise_amp.*rand(Float64,size(population3_history))
 noisy_data4 = population4_history+noise_amp.*rand(Float64,size(population4_history))
 noisy_data5 = population5_history+noise_amp.*rand(Float64,size(population5_history))
-# present the noisy data
 
+# present the noisy data
 fig = plot(t_span,noisy_data1,lab=:false)
 plot!(fig,t_span,noisy_data2,lab=:false)
 plot!(fig,t_span,noisy_data3,lab=:false)

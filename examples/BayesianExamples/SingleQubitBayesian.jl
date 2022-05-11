@@ -1,6 +1,7 @@
 using GLOQ
+#include("../../src/GLOQ.jl")
 using LinearAlgebra
-using Zygote,ReverseDiff
+using Zygote,ReverseDiff#,Foward
 using Turing, Distributions, DifferentialEquations
 # Import MCMCChain, Plots, and StatsPlots for visualizations and diagnostics.
 using MCMCChains, Plots
@@ -9,8 +10,7 @@ using CSV,DataFrames
 # Set a seed for reproducibility.
 using Random
 Random.seed!(14);
-using Plots
-
+pyplot()
 
 
 
@@ -74,41 +74,46 @@ display(fig)
 p_true = [freqs;gamma1;gamma2]
 #######################################################
 # Set up the autodifferentiation back end for Turing
-#Turing.setadbackend(:zygote)
-Turing.setadbackend(:reversediff)
+Turing.setadbackend(:zygote)
+#Turing.setadbackend(:reversediff)
 #Turing.setadbackend(:forwarddiff)
-global sample_number
+global forward_solve_call
 @model function RamseyExperiment(data)
 	 # Priori distribution
 	#σ ~ Normal(0.0,0.5)
 	σ ~ InverseGamma()
-    _freq ~ truncated(Normal(4.1,5e-4),4.1-1e-3,4.1+1e-3)
+#    _freq ~ truncated(Normal(4.1,2.5e-4),4.1-1e-4,4.1+1e-4)
+#    _gamma2 ~ truncated(Normal(25e-05,5e-5),24e-5,26e-5)
+	_freq ~ truncated(Normal(4.1,5e-4),4.1-1e-3,4.1+1e-3)
     _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
 
-	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
+	_rho_ramsey_u,_ = GLOQ.RamseyForwardSolve(
 					 state_u0,state_v0, # initial values, u for the real part, v for the imaginary part
 				     2.0*pi*[_freq],omr, # transition frequencies, drive frequency
-					 gamma1,[_gamma2], # decay and dephasing parameters ?
+					 gamma1,gamma2,#[_gamma2], # decay and dephasing parameters ?
 					 initial_state, # initial state
 					 TC,t_dark_times,N_states;
 					 method="exponential")
 					 #method = Trapezoid()) # control time, dark time, total number of states
-	_population_ramsey = GLOQ.get_population(_rho_ramsey_u)
+	_population_ramsey = GLOQ.get_population_UQ_matrix(_rho_ramsey_u)
+#	println(_rho_ramsey_u[end,:])
+#	println(_population_ramsey[1,1]," ",_population_ramsey[end,end])
 	for i = 1:N_dark_times
         data[i,:] ~ MvNormal(_population_ramsey[i,:], σ)
     end
-	global sample_number
-	sample_number += 1
-	# println("Sample ",sample_number," done")
+	global forward_solve_call
+	forward_solve_call += 1
+	println("Forward solve ",forward_solve_call," done")
 end
 
 model = RamseyExperiment(noisy_data)
 
-sample_number = 0
-chain_size = 35000
-@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
+forward_solve_call = 0
+chain_size = 3500#35000
+@time chain = sample(model, NUTS(0.65), chain_size)
+#@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
 
-BurnIn = 5000
+BurnIn = 1000#5000
 fig_chain = plot(chain[BurnIn+1:end]);
 xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);
 display(fig_chain)

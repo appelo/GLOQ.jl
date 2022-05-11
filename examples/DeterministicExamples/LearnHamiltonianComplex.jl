@@ -2,7 +2,7 @@ using Random
 using Plots
 using DifferentialEquations,DiffEqFlux,LinearAlgebra
 using Optim
-include("../src/GLOQ.jl")
+using GLOQ
 pyplot()
 #import GLOQ
 ############################################################

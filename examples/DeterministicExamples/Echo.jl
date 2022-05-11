@@ -9,7 +9,7 @@ using GalacticOptim,Optim,NLopt
 using Plots
 #
 #using GLOQ
-include("../src/GLOQ.jl")
+include("../../src/GLOQ.jl")
 pyplot()
 # BlackBoxOptim somehow downgrade some packages and as a result breaks the auto-differentiation with Zygote
 # we should avoid it.
@@ -20,7 +20,7 @@ freqs = [4.10817777; 3.88303940; 3.61937188]
 omegas = 2.0*pi.*freqs
 gamma1   = [2.59451982e-05; 4.54296537e-05; 0.0]
 gamma2   = [2.58005604e-05; 9.00000000e-05; 0.0]
-omr = 2.0*pi*3.8830355
+omr = 2.0*pi*(3.8830355)
 HK_free = GLOQ.RotationFrameDiagonal(omegas,omr)
 L1,L2 = GLOQ.RotationFrameLindblad(gamma1,gamma2)
 
@@ -32,54 +32,54 @@ rho_u0 = [0.0;0.0;0.0;0.0]
 rho_v0 = [0.0;0.0;0.0;0.0]
 rho_u0[fromState+1] = 1.0
 
-T_T1 = 10.0*GLOQ.GLOQ_MICRO_SEC
-N_dark_times = 51
+T_Echo = 10.0*GLOQ.GLOQ_MICRO_SEC
+N_dark_times = 26
 t_dark_times = zeros(Float64,N_dark_times)
-dt = T_T1/(N_dark_times-1)
+dt = T_Echo/(N_dark_times-1)
 for i = 1:N_dark_times
 	dark_time = (i-1)*dt
 	t_dark_times[i] = dark_time
 end
-rho_T1_u,rho_T1_v = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
+rho_Echo_u,rho_Echo_v = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 			     omegas,omr,
 				 gamma1,gamma2,
 				 1, # initial state
 				 TC,t_dark_times,N_states)
-population_T1 = GLOQ.get_population(rho_T1_u)
+population_Echo = GLOQ.get_population(rho_Echo_u)
 
-fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_T1)
+fig=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_Echo)
 display(fig)
 #################################################
 # Learn parameters
 #################################################
 p_true = [freqs;gamma1[1:2];gamma2[1:2]]
-p_initial = [freqs.-1e-4;0.5.*gamma1[1:2];0.5.*gamma2[1:2]]
-lower_bound = (0.25).*p_true
-upper_bound = (1.5).*p_true
+p_initial = [freqs.-1e-4;0.8.*gamma1[1:2];0.8.*gamma2[1:2]]
+lower_bound = (0.7).*p_true
+upper_bound = (1.3).*p_true
 
-rho_T1_u_guess,rho_T1_v_guess = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
+rho_Echo_u_guess,rho_Echo_v_guess = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 				 (2*pi).*p_initial[1:3],omr,
 				 [p_initial[4:5];0.0],[p_initial[6:7];0.0],
 				 1, # initial state
 				 TC,t_dark_times,N_states;initial_type = "states")
-population_guess= GLOQ.get_population(rho_T1_u_guess)
+population_guess= GLOQ.get_population(rho_Echo_u_guess)
 
 plot!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess,line=(:dash),legend=:outerright,)
 display(fig)
-fig2 = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess-population_T1,legend=:outerright,)
+fig2 = plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_guess-population_Echo,legend=:outerright,)
 display(fig2)
 ##################################################################################################
 global function_call
 function loss(p)
-	_rho_T1_u,_rho_T1_v = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
+	_rho_Echo_u,_rho_Echo_v = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 				     (2*pi).*p[1:3],omr,
 					 [p[4:5];0.0],[p[6:7];0.0],#gamma1,gamma2,
 					 1, # initial state
 					 TC,t_dark_times,N_states;
-					 method="DiffEqDefault",
-					 sensealg=BacksolveAdjoint()) # 144 secs for fminbox
-	_population_T1 = GLOQ.get_population(_rho_T1_u)
-	_loss = sum(abs2,_population_T1-population_T1)/N_dark_times
+					 #method=Trapezoid()
+					 )
+	_population_Echo = GLOQ.get_population(_rho_Echo_u)
+	_loss = sum(abs2,_population_Echo-population_Echo)/N_dark_times
 	return _loss
 end
 println("Initial loss: ",loss(p_initial))
@@ -90,15 +90,16 @@ function_call_num = 0
 function loss_gala(p,pp)
 	global function_call_num
 	function_call_num += 1
-	_rho_T1_u,_rho_T1_v = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
+	_rho_Echo_u,_rho_Echo_v = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 				     (2*pi).*p[1:3],omr,
 					 [p[4:5];0.0],[p[6:7];0.0],#gamma1,gamma2,
 					 1, # initial state
 					 TC,t_dark_times,N_states;
-					 method="DiffEqDefault",
-					 sensealg=BacksolveAdjoint())
-	_population_T1 = GLOQ.get_population(_rho_T1_u)
-	_loss = sum(abs2,_population_T1-population_T1)/N_dark_times
+					 #method=Trapezoid(),
+					 senselag = BacksolveAdjoint()
+					 )
+	_population_Echo = GLOQ.get_population(_rho_Echo_u)
+	_loss = sum(abs2,_population_Echo-population_Echo)/N_dark_times
 	#println("Function call ",function_call_num," Loss: ",_loss)
 	return _loss
 end
@@ -181,21 +182,21 @@ println("\nNLopt LBFGS with FD gradient: ",sol_nlopt_LBFGS_fd.u," \nLoss:",sol_n
 
 #######################################################################
 
-rho_T1_u_optim,rho_T1_v_optim = GLOQ.T1ForwardSolve(rho_u0,rho_v0,
+rho_Echo_u_optim,rho_Echo_v_optim = GLOQ.EchoForwardSolve(rho_u0,rho_v0,
 				 (2*pi).*sol_nlopt_LBFGS.u[1:3],omr,
 				 [sol_nlopt_LBFGS.u[4:5];0.0],[sol_nlopt_LBFGS.u[6:7];0.0],
 				 1,# initial state
 				 TC,t_dark_times,N_states;initial_type = "states")
-population_optim = GLOQ.get_population(rho_T1_u_optim)
+population_optim = GLOQ.get_population(rho_Echo_u_optim)
 
 
-plot!(fig2,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_T1,
+plot!(fig2,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_Echo,
 	  line=(:dash),lab=:false,legend=:outerright,)
 display(fig2)
 
-fig3=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_T1,
+fig3=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim-population_Echo,
 	  line=(:dash),lab=:false,legend=:outerright,)
 display(fig3)
 
-fig4=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_T1)
+fig4=plot(t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_Echo)
 plot!(fig4,t_dark_times./GLOQ.GLOQ_MICRO_SEC,population_optim,line=(:dash))

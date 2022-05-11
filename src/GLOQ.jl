@@ -2,6 +2,7 @@ module GLOQ
 
 using LinearAlgebra
 using DifferentialEquations
+#using ExponentialAction 
 
 export about
 # Write your package code here.

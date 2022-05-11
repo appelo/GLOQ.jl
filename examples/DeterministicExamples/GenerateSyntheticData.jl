@@ -7,9 +7,9 @@ using DifferentialEquations#,DiffEqFlux
 #using ForwardDiff
 using Plots
 using LaTeXStrings
-#using GLOQ
+using GLOQ
 #using ReverseDiff
-include("../src/GLOQ.jl")
+
 pyplot()
 # BlackBoxOptim somehow downgrade some packages and as a result breaks the auto-differentiation with Zygote
 # we should avoid it.

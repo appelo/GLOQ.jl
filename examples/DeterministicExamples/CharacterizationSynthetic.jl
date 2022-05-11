@@ -7,9 +7,9 @@ using DifferentialEquations
 
 using Plots
 using LaTeXStrings
-#using GLOQ
+using GLOQ
 #using ReverseDiff
-include("../src/GLOQ.jl")
+#include("../src/GLOQ.jl")
 pyplot()
 # Plotting
 fnt = Plots.font("Helvetica",16)

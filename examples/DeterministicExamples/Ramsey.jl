@@ -8,8 +8,7 @@ using DifferentialEquations#,DiffEqFlux
 using GalacticOptim,Optim,NLopt
 using Plots
 #
-#using GLOQ
-include("../src/GLOQ.jl")
+using GLOQ
 pyplot()
 # BlackBoxOptim somehow downgrade some packages and as a result breaks the auto-differentiation with Zygote
 # we should avoid it.
