@@ -16,25 +16,26 @@ do_optimization = true
 
 # Load Ramsey 01 data
 if (data_set_option=="short")
-    ramsey_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_0.txt"
-    ramsey_01_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_1.txt"
-    ramsey_01_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_2.txt"
-    t_ramsey_01_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_4000_5.txt"
+#    ramsey_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_0.txt"
+    ramsey_01_0_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_0.txt"
+    ramsey_01_1_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_1.txt"
+    ramsey_01_2_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_2.txt"
+    t_ramsey_01_file = "data-set-20220413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_4000_5.txt"
 
-    ramsey_12_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_4000_5_1000_confusion_0.txt"
-    ramsey_12_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_4000_5_1000_confusion_1.txt"
-    ramsey_12_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_4000_5_1000_confusion_2.txt"
-    t_ramsey_12_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_12_1000000.0_5_4000_1000_20220413_confusion.txt"
+    ramsey_12_0_file = "data-set-20220413/population_ramsey_12_1000000.0_4000_5_1000_confusion_0.txt"
+    ramsey_12_1_file = "data-set-20220413/population_ramsey_12_1000000.0_4000_5_1000_confusion_1.txt"
+    ramsey_12_2_file = "data-set-20220413/population_ramsey_12_1000000.0_4000_5_1000_confusion_2.txt"
+    t_ramsey_12_file = "data-set-20220413/darktime_ramsey_12_1000000.0_5_4000_1000_20220413_confusion.txt"
 else
-    ramsey_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_0.txt"
-    ramsey_01_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_1.txt"
-    ramsey_01_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_2.txt"
-    t_ramsey_01_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_80000_20.txt"
+    ramsey_01_0_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_0.txt"
+    ramsey_01_1_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_1.txt"
+    ramsey_01_2_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_2.txt"
+    t_ramsey_01_file = "data-set-20220413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_80000_20.txt"
 
-    ramsey_12_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_80000_20_1000_confusion_0.txt"
-    ramsey_12_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_80000_20_1000_confusion_1.txt"
-    ramsey_12_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_80000_20_1000_confusion_2.txt"
-    t_ramsey_12_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_12_1000000.0_20_80000_1000_20220413_confusion.txt"
+    ramsey_12_0_file = "data-set-20220413/population_ramsey_12_1000000.0_80000_20_1000_confusion_0.txt"
+    ramsey_12_1_file = "data-set-20220413/population_ramsey_12_1000000.0_80000_20_1000_confusion_1.txt"
+    ramsey_12_2_file = "data-set-20220413/population_ramsey_12_1000000.0_80000_20_1000_confusion_2.txt"
+    t_ramsey_12_file = "data-set-20220413/darktime_ramsey_12_1000000.0_20_80000_1000_20220413_confusion.txt"
 end
 detuning_01 = 1e-3
 detuning_12 = 1e-3

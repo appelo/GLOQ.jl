@@ -19,9 +19,9 @@ using KernelDensity
 
 quad_strategy = 2
 
-include("BayesianRamsey-01-12-pm-model.jl")
+include("ReadDataAndDefineModel-BayesianRamsey-01-12-pm.jl")
 # Read data
-my_chain = read("data-pm-2022-04-20/chain_500.jls",Chains)
+my_chain = read("chain-pm-2022-04-20/chain_500.jls",Chains)
 my_chain_data = DataFrame(my_chain)
 my_chain_size = 500
 # Extract chains for essential values
@@ -43,9 +43,9 @@ freq_12_plus_mean = mean(freq_12_plus_chain)
 
 fig_01 = plot(kde_01,linewidth=2.5,
                 size=(1200,800),
-                 xtickfontsize=18,ytickfontsize=18,titlefontsize=24,
-                 legend=:false,
-                 title="Transition Frequency 0-1")
+                xtickfontsize=18,ytickfontsize=18,titlefontsize=24,
+                legend=:false,
+                title="Transition Frequency 0-1")
 xticks!(fig_01,
         [freq_01_mean-6e-7;freq_01_mean;freq_01_mean+6e-7],
         ["mean - 0.6 KHz";string(@sprintf("%.6f",freq_01_mean)," GHz");"mean + 0.6 KHz"]);
@@ -91,6 +91,16 @@ display(fig_12)
 
 
 # use spline and kde to construct a quadrature rule
+#=
+The following subroutine is written by Dr. Steven G. Johnson, see the notes
+"Accurate solar-power integration: Solar-weighted Gaussian quadrature," arXiv:1912.06870 (2019),
+Steven G. Johnson for more details.
+
+The original code can be found in his Jupyter notebook: 
+https://nbviewer.org/urls/math.mit.edu/~stevenj/Solar-Quadrature.ipynb
+
+The authors are very grateful that Dr. Johnson shared his notebook with the community.
+=#
 using QuadGK, Dierckx
 function gaussquad_interpolant(N::Integer,
                                X::AbstractVector{<:Real}, W::AbstractVector{<:Real},
@@ -119,12 +129,16 @@ function gaussquad_interpolant(N::Integer,
     
     #println(rtol)
     return gauss(x -> Winterp_sqrt(x)^2, N, a, b; quad=interpquad, rtol=rtol)
+    #return gauss(x -> Winterp_sqrt(x)^2, N, a, b; quad=interpquad, rtol=rtol)
 end
 
 N_quad_01 = 8
 @time nodes_01,weights_01 = gaussquad_interpolant(N_quad_01,kde_01.x,kde_01.density,
                 rtol=1e-10) 
 nodes_01 .-= freq_01_mean
+
+@time nodes_01_2,weights_01_2 = gauss(z->pdf(kde_01,z),N_quad_01,minimum(kde_01.x), maximum(kde_01.x));
+nodes_01_2 .-= freq_01_mean
 
 N_quad_12 = 8
 @time nodes_plus,weights_plus = gaussquad_interpolant(N_quad_12,kde_plus.x,kde_plus.density,
@@ -174,9 +188,7 @@ for i = 1:N_quad_01
         end
 end
 
-
-
-
+display(plot!(fig_nw_01,nodes_01_2,weights_01_2,marker=:square,line=:dash,legend=true))
 # save the files
 nodes_01_file   = string("nodes-weights/nodes01_",N_quad_01,".txt")
 weights_01_file = string("nodes-weights/weights01_",N_quad_01,".txt")

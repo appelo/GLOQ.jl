@@ -10,15 +10,16 @@ half_pi_str = "duration"
 #############################################################################
 # Read data files
 #############################################################################
-t1_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_01_1000_20220413_40000_0.txt"
-t1_01_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_01_1000_20220413_40000_1.txt"
-t1_01_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_01_1000_20220413_40000_2.txt"
-t_t1_01_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_t1_01_1000_20220413_40000.txt"
+#t1_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_01_1000_20220413_40000_0.txt"
+t1_01_0_file = "data-set-20220413/population_t1_01_1000_20220413_40000_0.txt"
+t1_01_1_file = "data-set-20220413/population_t1_01_1000_20220413_40000_1.txt"
+t1_01_2_file = "data-set-20220413/population_t1_01_1000_20220413_40000_2.txt"
+t_t1_01_file = "data-set-20220413/darktime_t1_01_1000_20220413_40000.txt"
 
-t1_12_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_12_1000_40000_20220413_0.txt"
-t1_12_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_12_1000_40000_20220413_1.txt"
-t1_12_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_t1_12_1000_40000_20220413_2.txt"
-t_t1_12_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_t1_12_1000_40000_20220413.txt"
+t1_12_0_file = "data-set-20220413/population_t1_12_1000_40000_20220413_0.txt"
+t1_12_1_file = "data-set-20220413/population_t1_12_1000_40000_20220413_1.txt"
+t1_12_2_file = "data-set-20220413/population_t1_12_1000_40000_20220413_2.txt"
+t_t1_12_file = "data-set-20220413/darktime_t1_12_1000_40000_20220413.txt"
 
 pop_T01_0 = readdlm(t1_01_0_file)
 pop_T01_1 = readdlm(t1_01_1_file)

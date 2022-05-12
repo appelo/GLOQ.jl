@@ -16,25 +16,26 @@ do_optimization = true
 
 # Load Ramsey 01 data
 if (data_set_option=="short")
-    ramsey_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_0.txt"
-    ramsey_01_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_1.txt"
-    ramsey_01_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_2.txt"
-    t_ramsey_01_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_4000_5.txt"
+#    ramsey_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_0.txt"
+    ramsey_01_0_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_0.txt"
+    ramsey_01_1_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_1.txt"
+    ramsey_01_2_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_4000_5_2.txt"
+    t_ramsey_01_file = "data-set-20220413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_4000_5.txt"
 
-    ramsey_12_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_4000_5_1000_confusion_0.txt"
-    ramsey_12_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_4000_5_1000_confusion_1.txt"
-    ramsey_12_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_4000_5_1000_confusion_2.txt"
-    t_ramsey_12_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_12_1000000.0_5_4000_1000_20220413_confusion.txt"
+    ramsey_12_0_file = "data-set-20220413/population_ramsey_12_1000000.0_4000_5_1000_confusion_0.txt"
+    ramsey_12_1_file = "data-set-20220413/population_ramsey_12_1000000.0_4000_5_1000_confusion_1.txt"
+    ramsey_12_2_file = "data-set-20220413/population_ramsey_12_1000000.0_4000_5_1000_confusion_2.txt"
+    t_ramsey_12_file = "data-set-20220413/darktime_ramsey_12_1000000.0_5_4000_1000_20220413_confusion.txt"
 else
-    ramsey_01_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_0.txt"
-    ramsey_01_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_1.txt"
-    ramsey_01_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_2.txt"
-    t_ramsey_01_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_80000_20.txt"
+    ramsey_01_0_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_0.txt"
+    ramsey_01_1_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_1.txt"
+    ramsey_01_2_file = "data-set-20220413/population_ramsey_01_half_period_1000000.0_1000_20220413_80000_20_2.txt"
+    t_ramsey_01_file = "data-set-20220413/darktime_ramsey_01_half_period_1000000.0_1000_20220413_80000_20.txt"
 
-    ramsey_12_0_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_80000_20_1000_confusion_0.txt"
-    ramsey_12_1_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_80000_20_1000_confusion_1.txt"
-    ramsey_12_2_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/population_ramsey_12_1000000.0_80000_20_1000_confusion_2.txt"
-    t_ramsey_12_file = "/Users/zhichaopeng/Dropbox/research_projects/Quantum/Experiment/UQ/0413/0413/darktime_ramsey_12_1000000.0_20_80000_1000_20220413_confusion.txt"
+    ramsey_12_0_file = "data-set-20220413/population_ramsey_12_1000000.0_80000_20_1000_confusion_0.txt"
+    ramsey_12_1_file = "data-set-20220413/population_ramsey_12_1000000.0_80000_20_1000_confusion_1.txt"
+    ramsey_12_2_file = "data-set-20220413/population_ramsey_12_1000000.0_80000_20_1000_confusion_2.txt"
+    t_ramsey_12_file = "data-set-20220413/darktime_ramsey_12_1000000.0_20_80000_1000_20220413_confusion.txt"
 end
 detuning_01 = 1e-3
 
@@ -177,15 +178,13 @@ function loss_ramsey(p,dummy_parameter)
     _gamma2 = [1.0/(p[3]*GLOQ.GLOQ_MICRO_SEC); 1.0/(p[4]*GLOQ.GLOQ_MICRO_SEC)]
     # charge noise
     _charge_noise = 2.0*pi*[charge_noise01;p[5]]
-    # amplitude of pulse
-    _amp_01 = p[6]
-    _amp_12 = p[7]
+
     # Ramsey 0-1
     _rho_R01_u,_ = GLOQ.RamseyForwardSolve(state_u0,state_v0,
                                            (2*pi).*_freqs,omr_R01,
                                            gamma1,_gamma2,# gamma2
                                            0, # initial state
-                                           TC01,t_R01,N_states,_amp_01,
+                                           TC01,t_R01,N_states,1.0,
                                            half_pi_option=half_pi_str)
     _pop_R01 = GLOQ.get_population(_rho_R01_u)
 
@@ -197,7 +196,7 @@ function loss_ramsey(p,dummy_parameter)
 				   		  gamma1,_gamma2,
 						  1,
 				   		  [TC01;TC12],
-						  [_amp_01;_amp_12],
+						  [1.0;1.0],
 						  t_R12,
                           half_pi_option=half_pi_str)
     _pop_R12 = GLOQ.get_population(_rho_R12_u)
@@ -217,16 +216,14 @@ plot_callback = function(p,other_args)
     _gamma2 = [1.0/(p[3]*GLOQ.GLOQ_MICRO_SEC); 1.0/(p[4]*GLOQ.GLOQ_MICRO_SEC)]
     # charge noise
     _charge_noise = 2.0*pi*[charge_noise01;p[5]]
-    # amplitude of pulse
-    _amp_01 = p[6]
-    _amp_12 = p[7]
+
     # Ramsey-01
     # Ramsey 0-1
     _rho_R01_u,_ = GLOQ.RamseyForwardSolve(state_u0,state_v0,
                                            (2*pi).*_freqs,omr_R01,
                                            gamma1,_gamma2,# gamma2
                                            0, # initial state
-                                           TC01,t_R01,N_states,_amp_01,
+                                           TC01,t_R01,N_states,1.0,
                                            half_pi_option=half_pi_str)
     _pop_R01 = GLOQ.get_population(_rho_R01_u)
 
@@ -237,7 +234,7 @@ plot_callback = function(p,other_args)
         gamma1,_gamma2,
         1,
         [TC01;TC12],
-        [_amp_01;_amp_12],
+        [1.0;1.0],
         t_R12,
         half_pi_option=half_pi_str)
     _pop_R12 = GLOQ.get_population(_rho_R12_u)
@@ -296,15 +293,14 @@ println("\nOptimized results: ",sol.u,
 my_freqs  = [sol.u[1];sol.u[2]]
 my_gamma2 = [1.0/(sol.u[3]*GLOQ.GLOQ_MICRO_SEC);1.0/(sol.u[4]*GLOQ.GLOQ_MICRO_SEC)]
 my_charge_noise12 = 2.0*pi*sol.u[5]
-my_amp_01 = sol.u[6]
-my_amp_12 = sol.u[7]
+
 
 # Ramsey 01 results
 rho_R01_u,_ = GLOQ.RamseyForwardSolve(state_u0,state_v0,
                                       (2*pi).*my_freqs,omr_R01,
                                       gamma1,my_gamma2,# gamma2
                                       0, # initial state
-                                      TC01,t_R01,N_states,my_amp_01,
+                                      TC01,t_R01,N_states,1.0,
                                       half_pi_option=half_pi_str)
 pop_R01 = GLOQ.get_population(rho_R01_u)
 fig_R01 = plot(t_R01./GLOQ.GLOQ_MICRO_SEC,pop_R01_data,label=["Data-0" "Data-1" "Data-2"],
@@ -332,7 +328,7 @@ rho_R12_u,_ = GLOQ.PerformForwardRamseyExperimentParity(
                     gamma1,my_gamma2,
                     1,
                     [TC01;TC12],
-                    [my_amp_01;my_amp_12],
+                    [1.0;1.0],
                     t_R12,
                     half_pi_option=half_pi_str)
 pop_R12 = GLOQ.get_population(rho_R12_u)
