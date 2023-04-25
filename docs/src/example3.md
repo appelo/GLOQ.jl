@@ -87,6 +87,10 @@ scatter!(fig,t_dark_times./GLOQ.GLOQ_MICRO_SEC,noisy_data,
 p_true = [freqs;gamma1;gamma2]
 ```
 ![Example 3: synthetic noisy data](picture/Example3_noisy_data.png)
+#### Set up the auto-differentiation backend for Turing.jl as Zygote. Note that the current implementation only supports Zygote for the AD backend.
+```julia
+Turing.setadbackend(:zygote)
+```
 #### Synthetic data with and without noise. Population of different states are presented.
 - Syn-0: synthetic data without noise for the energy level 0;
 - Syn-1: synthetic data without noise for the energy level 1;
@@ -104,11 +108,11 @@ and `_gamma2` is sampled based on a truncated normal distribution.
 Based on the sampled parameters, we apply `GLOQ.RamseyForwardSolve` to perform a forward solve, and the noisy data is assumed to obey 
 a priori distribution, which is a multivariate-normal distribution whose mean is the forward simulation results and its covariance matrix is $\sigma I$.
 ```julia
-global sample_number
+global forward_solve_call
 @model function RamseyExperiment(data)
 	 # Priori distribution
 	σ ~ InverseGamma() # random hyper parameter $\sigma$ obeys an Inverse Gamma distribution.
-    _freq ~ truncated(Normal(4.1,1e-4),4.1-5e-4,4.1+5e-4)
+	_freq ~ truncated(Normal(4.1,5e-4),4.1-1e-3,4.1+1e-3)
     _gamma2 ~ truncated(Normal(25e-05,2.5e-5),20e-5,30e-5)
 	# Perform a Forward solve with sampled parameters
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(
@@ -123,9 +127,9 @@ global sample_number
 	for i = 1:N_dark_times
         data[i,:] ~ MvNormal(_population_ramsey[i,:], σ)
     end
-	global sample_number
-	sample_number += 1
-	println("Sample ",sample_number," done")
+	global forward_solve_call
+	forward_solve_call += 1
+	println("Forward solve ",forward_solve_call," done")
 end
 
 model = RamseyExperiment(noisy_data)
@@ -133,15 +137,15 @@ model = RamseyExperiment(noisy_data)
 #### Step 2b: use Turing.jl's `sample` function to apply the Metropolis-Hastings algorithm.
 
 In the `sample` function, the first argument is the target `model` object, the second argument specifies which sampler is applied, and the 
-third argument is the length of the chain. Here, we use the standard Metropolis-Hastings sampler with a  diagonal covariance matrix.
+third argument is the length of the chain. Here, we use the No-U-Turn sampler.
 ```julia
-sample_number = 0
-chain_size = 35000
-@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
+forward_solve_call = 0
+chain_size = 3500
+@time chain = sample(model, NUTS(0.65), chain_size)
 ```
 Burn-in length is set up as $5000$ to improve the quality of the chain. We present the chain after burn-in.
 ```julia
-BurnIn = 5000
+BurnIn = 1000
 fig_chain = plot(chain[BurnIn+1:end]);
 xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);
 display(fig_chain)

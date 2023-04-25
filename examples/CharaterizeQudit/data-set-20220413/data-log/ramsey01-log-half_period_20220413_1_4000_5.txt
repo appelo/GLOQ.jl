@@ -1,0 +1,8 @@
+Constatn pulse (128ns)
+Calibrated amp for 01: 1.06Freqeuncy for 01 transition: 3445495117.969068 Hz
+Driving freqeuncy for 01: 3444495117.969068 Hz
+Driving freqeuncy for Ramsey-12 experiment: 3237422324.0 Hz
+
+One data point corresponding to the average of 1000 shots
+Number of dark times sampled: 201 from 0 to 4000 ns
+Each step is 20 ns

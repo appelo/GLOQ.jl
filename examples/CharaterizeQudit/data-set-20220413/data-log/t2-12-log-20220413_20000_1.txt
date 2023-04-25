@@ -1,0 +1,7 @@
+Constatn pulse (128ns)
+Calibrated amp for 01: 1.06Driving Freqeuncy for 01 transition: 3445495117.969068 Hz
+Freqeuncy for 12: 3237426519.2056537 Hz
+
+One data point corresponding to the average of 500 shots
+Number of dark times sampled: 251 from 0 to 20000 ns
+Each step is 80 ns

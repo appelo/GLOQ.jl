@@ -1,0 +1,10 @@
+Ramsey 1-2 experiment with custom pi-01 and pi-12 pulse, experiment date 20220413
+Constant pulsesCalibrated amp for 01: 1.06 Calibrated amp for 12: 0.9893005393889235
+
+Freqeuncy for 01 transition: 3445495117.969068 Hz
+Freqeuncy for 12 transition: 3237426519.2056537 Hz
+Driving freqeuncy for Ramsey-12 experiment: 3236426519.2056537 Hz
+
+One data point corresponding to the average of 1000 shots
+Number of dark times sampled: 201 from 0 to 4000 ns
+Each step is 20 ns
