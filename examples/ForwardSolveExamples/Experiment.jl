@@ -1,16 +1,11 @@
 using Random
 using LinearAlgebra
-using GalacticOptim,Optim,NLopt#,BlackBoxOptim
-using DifferentialEquations#,DiffEqFlux
-#using ForwardDiff
+using Optim,NLopt
+using DifferentialEquations
 using Zygote
 using Plots
-#using ReverseDiff
-include("../src/GLOQ.jl")
+using GLOQ
 pyplot()
-# BlackBoxOptim somehow downgrade some packages and as a result breaks the auto-differentiation with Zygote
-# we should avoid it.
-# NLopt seems to be really fast. Their LBFGS with box constrains is faster than Optim's FMinbox(LBFGS)
 
 N_states = 4;
 freqs = [4.10817777; 3.88303940; 3.61937188]
@@ -54,7 +49,6 @@ end
 				 TC,t_ramsey,N_states;
 				 method = Trapezoid(),
 				 abstol = 1e-10,
-				 restol = 1e-10
 				 )
 population_Ramsey = GLOQ.get_population(rho_ramsey_u)
 population_Ramsey_exp = GLOQ.get_population(rho_ramsey_u_exp)
@@ -92,8 +86,7 @@ end
 				 TC,t_echo,N_states;
 				 initial_type = "states",
 				 method = Trapezoid(),
-				 abstol = 1e-10,
-				 restol = 1e-10)
+				 abstol = 1e-10)
 population_Echo = GLOQ.get_population(rho_echo_u)
 population_Echo_exp = GLOQ.get_population(rho_echo_u_exp)
 
@@ -129,8 +122,7 @@ population_T1_exp = GLOQ.get_population(rho_t1_u_exp)
 				 TC,t_T1,N_states;
 				 initial_type = "states",
 				 method = Trapezoid(),
-				 abstol = 1e-10,
-				 restol = 1e-10)
+				 abstol = 1e-10)
 population_T1 = GLOQ.get_population(rho_t1_u)
 
 println( maximum(abs.(population_T1-population_T1_exp)) )

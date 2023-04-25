@@ -1,9 +1,9 @@
-include("../../src/GLOQ.jl")
+#include("../../src/GLOQ.jl")
+using GLOQ
 using Zygote
 using LinearAlgebra
-using GalacticOptim,NLopt,Optim
-using Plots
-#using GLOQ
+using Optim
+using Plots#
 using DelimitedFiles
 
 half_pi_str = "duration" 
@@ -168,7 +168,7 @@ if (do_optimization)
 #    p[1,2] = transition frequencies in GHz
 #    p[3,4] = gamma2s
 # dummy_parameter: needed by GalacticOptim, one can just put [] here
-function loss_ramsey(p,dummy_parameter)
+function loss_ramsey(p)
     # Transition frequencies
     _omegas_minus = (2.0*pi).*[p[1];p[2]]
     _omegas_plus  = (2.0*pi).*[p[1];p[3]]
@@ -209,10 +209,14 @@ function loss_ramsey(p,dummy_parameter)
     return _loss
 end
 
+# The gradient for the loss function
+function loss_ramsey_gradient!(_grad,_x)  
+    _grad .= Zygote.gradient(loss_ramsey,_x)[1]
+end
 
-
-
-plot_callback = function(p,other_args)
+# A call back function to plot while optimizing
+plot_callback = function(_trace)
+    p = _trace.metadata["x"]
     # Transition frequencies
     _omegas_minus = (2.0*pi).*[p[1];p[2]]
     _omegas_plus  = (2.0*pi).*[p[1];p[3]]
@@ -268,36 +272,26 @@ p_initial = [ freqs[1];freqs[2]-charge_noise12;freqs[2]+charge_noise12;T2[1];T2[
 lower_bound = [freqs[1]-1e-3;freqs[2]-1e-3;freqs[2]-5e-4;0.1; 0.1 ]#0.99;0.99]#TC01*0.1]
 upper_bound = [freqs[1]+1e-3;freqs[2]+5e-4;freqs[2]+1e-3;30.0;20.0]#1.01;1.01]#TC01*5.0]
 
-#loss_ramsey_test(x) = loss_ramsey(x,[])
-#println(loss_ramsey(p_initial,[]))
-#@time Zygote.gradient(loss_ramsey_test,p_initial)
-#@time plot_callback(p_initial,[])
 
-# construct optimization object, use Zygote auto-differentiation to compute the gradient
-loss_gradient = GalacticOptim.OptimizationFunction(loss_ramsey, GalacticOptim.AutoZygote())
-opt_prob = GalacticOptim.OptimizationProblem(loss_gradient, p_initial,
-                                             lb = lower_bound, ub = upper_bound)
-
-
-println("Optim Fminbox(LBFGS) Optimization starts")
-@time sol = GalacticOptim.solve(opt_prob ,Fminbox(LBFGS()),
-                                cb = plot_callback,
-                                outer_iterations = 50,
-                                iterations = 50,
-                                show_trace=true,
-                                f_tol = 1e-4,
-                                outer_f_tol = 1e-4)
+println("Optim Fminbox(LBFGS) Optimization begins")
+@time sol = Optim.optimize(loss_ramsey,loss_ramsey_gradient!,
+                           lower_bound,upper_bound,p_initial,
+                           Fminbox(LBFGS()),
+                           Optim.Options(
+                               show_trace=true,
+                               callback=plot_callback,extended_trace=true,
+                               iterations=50,outer_iterations=50,
+                               f_tol=1e-4,outer_f_tol=1e-4))
 println("Optim Fminbox(LBFGS) Optimization done")
-
 # present the solutions
-println("\nOptimized results: ",sol.u,
+println("\nOptimized results: ",sol.minimizer,
         "\nLoss: ",sol.minimum)
 
 # present results
-my_omegas_minus = (2.0*pi).*[sol.u[1];sol.u[2]]
-my_omegas_plus  = (2.0*pi).*[sol.u[1];sol.u[3]]
+my_omegas_minus = (2.0*pi).*[sol.minimizer[1];sol.minimizer[2]]
+my_omegas_plus  = (2.0*pi).*[sol.minimizer[1];sol.minimizer[3]]
 # gamma2
-my_gamma2 = [1.0/(sol.u[4]*GLOQ.GLOQ_MICRO_SEC); 1.0/(sol.u[5]*GLOQ.GLOQ_MICRO_SEC)]
+my_gamma2 = [1.0/(sol.minimizer[4]*GLOQ.GLOQ_MICRO_SEC); 1.0/(sol.minimizer[5]*GLOQ.GLOQ_MICRO_SEC)]
 # amplitude of pulse
 my_amp_01 = 1.0
 my_amp_12 = 1.0
@@ -361,7 +355,7 @@ fig_R12_error = plot(t_R12./GLOQ.GLOQ_MICRO_SEC,pop_R12_data-pop_R12,label=["Dat
 display(fig_R12_error)
 
 # 
-println("Optimized values: ",sol.u,"\n",
+println("Optimized values: ",sol.minimizer,"\n",
         "Intitial guess:   ",p_initial,"\n",
-        "Difference:       ",sol.u-p_initial)
+        "Difference:       ",sol.minimizer-p_initial)
 end

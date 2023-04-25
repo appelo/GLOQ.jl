@@ -2,26 +2,15 @@ using Zygote
 using Random
 using DelimitedFiles
 using LinearAlgebra
-using GalacticOptim,Optim,NLopt
+using NLopt#Optim
 using DifferentialEquations
 
 using Plots
 using LaTeXStrings
 using GLOQ
-#using ReverseDiff
-#include("../src/GLOQ.jl")
+
 pyplot()
-# Plotting
-fnt = Plots.font("Helvetica",16)
-lfnt = Plots.font("Helvetica",12)
-Plots.default(titlefont=fnt,
-			  guidefont=fnt,
-			  tickfont=fnt,
-			  legendfont=lfnt,
-			  linewidth=2);
-# BlackBoxOptim somehow downgrade some packages and as a result breaks the auto-differentiation with Zygote
-# we should avoid it.
-# NLopt seems to be really fast. Their LBFGS with box constrains is faster than Optim's FMinbox(LBFGS)
+
 
 ########################################################################
 # Step 1: set up the problem
@@ -264,7 +253,7 @@ global _iteration_number = 0
 # Step 2: define and solve the optimization problem
 ########################################################
 # Step 2a: define the loss (objective) function
-function loss_gala(p,p_keywords)
+function loss(p)
 	# Ramsey experiments
 	_rho_Ramsey_01_u,_rho_Ramsey_01_v = GLOQ.RamseyParityForwardSolve(u0_ramsey_01,v0_ramsey_01,
 					 2.0*pi.*p[1:3],omr_ramsey_01,
@@ -354,25 +343,23 @@ function loss_gala(p,p_keywords)
 			sum(abs2,_population_T1_12-data_t1_12).*dt_t1_12/T_evaluated_t1_12+
 			sum(abs2,_population_T1_23-data_t1_23).*dt_t1_23/T_evaluated_t1_23
 
-	global _function_call
-	_function_call += 1
-	if(_function_call%1==0)
-		println("Function call: ",_function_call," Loss = ",_loss)
-	end
 	return _loss
 end
 
+# Step 2b: define the gradient of loss with AD package Zygote.jl
+function loss_nlopt(p,grad)
+    grad .= Zygote.gradient(loss,p)[1]
+    return loss(p)
+end
 
-########################################################################
-# Step 2b: initial guess and bounds for target parameters
-########################################################################
+# Step 2c: initial guess and bounds for target parameters
 # transition frequency
 freqs = [4.0108; 3.8830; 3.6287];
 omegas = 2.0*pi.*freqs # change things from GHz to radians
 # magnitude of the charge noise
 char_noise = [1.5e-6, 5.0e-5, 1.0e-4]
 # Lindblad parameters
-gamma1   = [1.0e-05; 4.0e-05; 4.0e-5]
+gamma1   = [1.5e-05; 4.0e-05; 4.0e-5]
 gamma2   = [2.5e-05; 5.0e-05; 2.5e-4]
 # initial guess
 p_initial = [freqs; # transition frequencies
@@ -382,34 +369,28 @@ p_initial = [freqs; # transition frequencies
  		 	 ]# charge noise
 
 # upper and lower bound for optimizaiton
-initial_loss = loss_gala(p_initial,[])
-
 lower_bound = [ 4.00; 3.85; 3.60;
-				1e-6; 5e-5; 1e-4;
+				1e-6; 3e-5; 0.5e-4;
 				1e-5; 3e-5; 3e-5;
 				2e-5; 2.5e-5; 2e-4;
 			  ]
 upper_bound = [ 4.10; 3.95; 3.65;
-				3e-6; 7e-5; 2e-4;
+				3e-6; 7e-5; 1.5e-4;
 				3e-5; 5e-5; 5e-5;
 				5e-5; 1e-4; 3e-4;
 			  ]
 
-#####################################################################################
-# Step 2c: optimization interface
-#####################################################################################
-# interface for the GalacticOptim with gradient computed by auto-differentiation
-# (with the Zygote package)
-optimization_function_az = OptimizationFunction(loss_gala, GalacticOptim.AutoZygote())
-prob_az = GalacticOptim.OptimizationProblem(optimization_function_az, p_initial;
-										    lb = lower_bound, ub = upper_bound)
-_function_call = 0
-# solve the optimization problem
-@time sol = solve(prob_az , Opt(:LD_LBFGS,length(p_initial)),
-				  maxiters=200,
-				  ftol_rel=1e-3
-				 )
-p_optim = sol.u
+# Step 2c: solve the optimization problem
+println("NLopt LBFGS Optimization with Zygote gradient starts")
+nl_opt_obj = Opt(:LD_LBFGS,length(p_initial))
+nl_opt_obj.min_objective = loss_nlopt
+nl_opt_obj.lower_bounds = lower_bound
+nl_opt_obj.upper_bounds = upper_bound
+nl_opt_obj.maxeval = 200
+nl_opt_obj.ftol_rel = 1e-6
+@time loss_value_nlopt,sol_nlopt,flag_nlopt = NLopt.optimize(nl_opt_obj,p_initial)
+println("NLopt LBFGS Optimization with Zygote gradient done")
+p_optim = sol_nlopt
 
 ########################################################
 # Step 3: visualization

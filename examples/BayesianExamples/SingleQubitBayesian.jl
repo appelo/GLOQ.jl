@@ -1,7 +1,7 @@
-using GLOQ
+
 #include("../../src/GLOQ.jl")
 using LinearAlgebra
-using Zygote,ReverseDiff#,Foward
+using Zygote#,ReverseDiff#,Foward
 using Turing, Distributions, DifferentialEquations
 # Import MCMCChain, Plots, and StatsPlots for visualizations and diagnostics.
 using MCMCChains, Plots
@@ -11,7 +11,7 @@ using CSV,DataFrames
 using Random
 Random.seed!(14);
 pyplot()
-
+using GLOQ
 
 
 # System parameters for a simple two level open quantum system
@@ -75,8 +75,6 @@ p_true = [freqs;gamma1;gamma2]
 #######################################################
 # Set up the autodifferentiation back end for Turing
 Turing.setadbackend(:zygote)
-#Turing.setadbackend(:reversediff)
-#Turing.setadbackend(:forwarddiff)
 global forward_solve_call
 @model function RamseyExperiment(data)
 	 # Priori distribution
@@ -109,11 +107,11 @@ end
 model = RamseyExperiment(noisy_data)
 
 forward_solve_call = 0
-chain_size = 3500#35000
+chain_size = 35000
 @time chain = sample(model, NUTS(0.65), chain_size)
 #@time chain = sample(model, MH(Diagonal([5e-3,5e-3,5e-2])), chain_size)
 
-BurnIn = 1000#5000
+BurnIn = 5000
 fig_chain = plot(chain[BurnIn+1:end]);
 xticks!(fig_chain[4],[4.099998;4.10;4.1000015],);
 display(fig_chain)
@@ -157,7 +155,7 @@ println( "Error of freqs: ",abs(freq_mean-freqs[1]),
 # Sample from the chain
 #########################
 global fig_result
-for i = 1:1000
+for i = 1:50
 	global fig_result
 	sample_ind = rand(1:chain_size-BurnIn)
     freq_sample = chain_data._freq[sample_ind]

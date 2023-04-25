@@ -1,9 +1,8 @@
-include("../../src/GLOQ.jl")
 using Zygote
 using LinearAlgebra
-using GalacticOptim,NLopt,Optim
+using Optim
 using Plots
-#using GLOQ
+using GLOQ
 using DelimitedFiles
 
 half_pi_str = "duration" 
@@ -118,10 +117,9 @@ display(fig_t12)
 ##########
 # Define the loss function for the GalacticOptim
 # p: phyiscal parameters:
-#    p[1,2] = transition frequencies in GHz
-#    p[3,4] = gamma2s
+#    p[1,2] = T1
 # dummy_parameter: needed by GalacticOptim, one can just put [] here
-function loss_T1(p,dummy_parameter)
+function loss_T1(p)
     # gamma1
     _gamma1 = [1.0/(p[1]*GLOQ.GLOQ_MICRO_SEC); 1.0/(p[2]*GLOQ.GLOQ_MICRO_SEC)]
 
@@ -148,8 +146,13 @@ function loss_T1(p,dummy_parameter)
     return _loss
 end
 
+# The gradient for the loss function
+function loss_T1_gradient!(_grad,_x)  
+    _grad .= Zygote.gradient(loss_T1,_x)[1]
+end
 
-plot_callback = function(p,other_args)
+plot_callback = function(_trace)
+    p = _trace.metadata["x"]
     # gamma1
     _gamma1 = [1.0/(p[1]*GLOQ.GLOQ_MICRO_SEC); 1.0/(p[2]*GLOQ.GLOQ_MICRO_SEC)]
 
@@ -192,33 +195,23 @@ p_initial = [ T1[1];T1[2] ]
 lower_bound = [50;75.0]#TC01*0.1]
 upper_bound = [200.0;150.0]#TC01*5.0]
 
-loss_T1_test(x) = loss_T1(x,[])
-println(loss_T1(p_initial,[]))
-@time Zygote.gradient(loss_T1_test,p_initial)
-@time plot_callback(p_initial,[])
-
-# construct optimization object, use Zygote auto-differentiation to compute the gradient
-loss_gradient = GalacticOptim.OptimizationFunction(loss_T1, GalacticOptim.AutoZygote())
-opt_prob = GalacticOptim.OptimizationProblem(loss_gradient, p_initial,
-                                             lb = lower_bound, ub = upper_bound)
-
-
 println("Optim Fminbox(LBFGS) Optimization starts")
-@time sol = GalacticOptim.solve(opt_prob ,Fminbox(LBFGS()),
-                                cb = plot_callback,
-                                outer_iterations = 50,
-                                iterations = 50,
-                                show_trace=true,
-                                f_tol = 1e-4,
-                                outer_f_tol = 1e-4)
+@time sol = Optim.optimize(loss_T1,loss_T1_gradient!,
+                           lower_bound,upper_bound,p_initial,
+                           Fminbox(LBFGS()),
+                           Optim.Options(
+                               show_trace=true,
+                               callback=plot_callback,extended_trace=true,
+                               iterations=50,outer_iterations=50,
+                               f_tol=1e-4,outer_f_tol=1e-4))
 println("Optim Fminbox(LBFGS) Optimization done")
 
 # present the solutions
-println("\nOptimized results: ",sol.u,
+println("\nOptimized results: ",sol.minimizer,
         "\nLoss: ",sol.minimum)
 
 # present results
-my_gamma1 = [1.0/(sol.u[1]*GLOQ.GLOQ_MICRO_SEC); 1.0/(sol.u[2]*GLOQ.GLOQ_MICRO_SEC)]
+my_gamma1 = [1.0/(sol.minimizer[1]*GLOQ.GLOQ_MICRO_SEC); 1.0/(sol.minimizer[2]*GLOQ.GLOQ_MICRO_SEC)]
 # T1 01 results
 rho_T01_u,_ = GLOQ.T1ForwardSolve(
         state_u0,state_v0, # initial values, u for the real part, v for the imaginary part
@@ -272,6 +265,6 @@ fig_T12_error = plot(t_T12./GLOQ.GLOQ_MICRO_SEC,pop_T12_data-pop_T12,label=["Dat
 display(fig_T12_error)
 
 # 
-println("Optimized values: ",sol.u,"\n",
+println("Optimized values: ",sol.minimizer,"\n",
         "Intitial guess:   ",p_initial,"\n",
-        "Difference:       ",sol.u-p_initial)
+        "Difference:       ",sol.minimizer-p_initial)

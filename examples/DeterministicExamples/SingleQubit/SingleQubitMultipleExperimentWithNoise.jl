@@ -1,6 +1,6 @@
 using Zygote
 using LinearAlgebra
-using GalacticOptim,NLopt,Optim
+using NLopt
 using Plots
 using GLOQ
 
@@ -125,13 +125,13 @@ end
 
 
 
-# Define the loss function for the GalacticOptim
+# Define the loss function for the NLopt
 # p: phyiscal parameters:
 #	 p[1] = transition frequency in GHz
 #    p[2] = gamma1
 #    p[3] = gamma2
 # dummy_parameter: needed by GalacticOptim, one can just put [] here
-function loss(p,dummy_parameter)
+function loss(p)
 	# Ramsey
 	_rho_ramsey_u,_rho_ramsey_v = GLOQ.RamseyForwardSolve(state_u0,state_v0,
 				     (2*pi).*[p[1]],omr_ramsey,
@@ -161,52 +161,10 @@ function loss(p,dummy_parameter)
 	return _loss
 end
 
-plot_callback = function(p,other_args)
-	# Ramsey
-	rho_ramsey_u,rho_ramsey_v = GLOQ.RamseyForwardSolve(state_u0,state_v0,
-					 (2*pi).*[p[1]],omr_ramsey,
-					 [p[2]],[p[3]],#gamma1,gamma2,
-					 initial_state, # initial state
-					 TC,t_dark_ramsey,N_states)
-	population_ramsey = GLOQ.get_population(rho_ramsey_u)
-	# Echo
-    rho_echo_u,rho_echo_v = GLOQ.EchoForwardSolve(state_u0,state_v0,
-				     (2*pi).*[p[1]],omr_echo,
-					 [p[2]],[p[3]],#gamma1,gamma2,
-					 initial_state, # initial state
-					 TC,t_dark_echo,N_states)
-	population_echo = GLOQ.get_population(rho_echo_u)
-
-	# T1
-    rho_t1_u,rho_t1_v = GLOQ.T1ForwardSolve(state_u0,state_v0,
-				     (2*pi).*[p[1]],omr_t1,
-					 [p[2]],[p[3]],#gamma1,gamma2,
-					 initial_state, # initial state
-					 TC,t_dark_t1,N_states)
-	population_t1 = GLOQ.get_population(rho_t1_u)
-
-	# Plot
-	# Ramsey
-	fig_ramsey = plot(t_dark_ramsey./GLOQ.GLOQ_MICRO_SEC,noisy_ramsey,label=["Noisy-0" "Noisy-1"],
-			          line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5),legend=:outerright,
-					  title="Ramsey");
-	plot!(fig_ramsey,t_dark_ramsey./GLOQ.GLOQ_MICRO_SEC,population_ramsey,label=["Noisy-0" "Opt-1"],legend=:outerright);
-	# Echo
-	fig_echo = plot(t_dark_echo./GLOQ.GLOQ_MICRO_SEC,noisy_echo,label=["Noisy-0" "Noisy-1"],
-		  		     line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5),legend=:outerright,
-					 title="Echo");
-	plot!(fig_echo,t_dark_echo./GLOQ.GLOQ_MICRO_SEC,population_echo,label=["Opt-0" "Opt-1"],legend=:outerright);		
-	# T1
-	fig_t1=plot(t_dark_t1./GLOQ.GLOQ_MICRO_SEC,noisy_t1,label=["Noisy-0" "Noisy-1"],
-			    line = (:dash,0.0), marker = ([:hex :hex], 5, 0.5),legend=:outerright,
-				title="T1");
-	plot!(fig_t1,t_dark_t1./GLOQ.GLOQ_MICRO_SEC,population_t1,label=["Opt-0" "Opt-1"],legend=:outerright);
-
-	display( plot(fig_ramsey,fig_echo,fig_t1,layout=grid(3,1),size=[1000,1500],
-				  legendfontsize=15,xtickfontsize=15,ytickfontsize=15,titlefontsize=18) )
-	return false
+function loss_nlopt(p,grad)
+	grad .= Zygote.gradient(loss,p)[1]
+	return loss(p)
 end
-
 
 p_true = [freqs;gamma1;gamma2] # values to generate synthetic data
 # initial guess for the optimization
@@ -216,24 +174,19 @@ lower_bound = (0.5).*p_true
 upper_bound = (1.5).*p_true
 
 
-# construct optimization object, use Zygote auto-differentiation to compute the gradient
-loss_gradient = GalacticOptim.OptimizationFunction(loss, GalacticOptim.AutoZygote())
-opt_prob = GalacticOptim.OptimizationProblem(loss_gradient, p_initial,
-										 lb = lower_bound, ub = upper_bound)
+println("NLopt LBFGS Optimization starts")
+nlopt_obj = NLopt.Opt(:LD_LBFGS,length(p_initial))
+nlopt_obj.min_objective = loss_nlopt
+nlopt_obj.lower_bounds = lower_bound
+nlopt_obj.upper_bounds = upper_bound
+nlopt_obj.maxeval = 200
+nlopt_obj.ftol_rel = 1e-4
+@time loss_value_nlopt,sol_nlopt,flag_nlopt = NLopt.optimize(nlopt_obj,p_initial)
+println("NLopt LBFGS Optimization done")
 
 
-
-println("Optim Fminbox(LBFGS) Optimization starts")
-@time sol = GalacticOptim.solve(opt_prob ,Fminbox(LBFGS()),
-								cb = plot_callback,
-								outer_iterations = 20,
-								iterations = 10,
-								show_trace=true,
-								f_tol = 1e-5,
-								outer_f_tol = 1e-5)
-println("Optim Fminbox(LBFGS) Optimization done")
-
-# present the solutions
-println("\nOptimized results: ",sol.u,
-        "\nLoss: ",sol.minimum,
-		"\nError: ",sol.u-p_true)
+# present the solution
+println("\n\n\n---------------------------\nOptimized results: \n[Transition freq. (GHz), gamma2]\n",sol_nlopt,
+        "\nLoss: ",loss_value_nlopt,
+		"\nError: ",sol_nlopt-p_true,"\n---------------------------\n")
+		

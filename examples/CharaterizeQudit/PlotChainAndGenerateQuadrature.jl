@@ -16,7 +16,7 @@ using StatsBase
 using Distributions
 using Printf
 using KernelDensity
-
+pyplot()
 quad_strategy = 2
 
 include("ReadDataAndDefineModel-BayesianRamsey-01-12-pm.jl")
